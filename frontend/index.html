@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Juramento del Bosque Vivo</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANTALLA INTRO — Historia del sabio   -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="pantalla-intro" class="pantalla activa">
+
+        <div class="intro-contenedor">
+
+            <div class="intro-slide activo" id="slide-1">
+                <div class="intro-icono">🌲</div>
+                <h1 class="intro-titulo">El Juramento del Bosque Vivo</h1>
+                <p class="intro-texto">
+                    En la Edad Media, en un reino rodeado por bosques extensos,
+                    existía la creencia de que todo ser vivo tiene un espíritu
+                    que responde al trato humano.
+                </p>
+            </div>
+
+            <div class="intro-slide" id="slide-2">
+                <div class="intro-icono">🌑</div>
+                <h2 class="intro-titulo">El Problema del Reino</h2>
+                <p class="intro-texto">
+                    Con el tiempo, los humanos empezaron a abandonar animales,
+                    maltratarlos y olvidar el valor del cuidado.
+                    El bosque empezó a enfermar...
+                </p>
+            </div>
+
+            <div class="intro-slide" id="slide-3">
+                <div class="intro-icono">🧙</div>
+                <h2 class="intro-titulo">El Sabio del Bosque</h2>
+                <p class="intro-texto">
+                    Un viejo guardián decidió crear un vínculo vivo
+                    entre los humanos y el espíritu del cuidado.
+                    No un arma. No una bestia. Algo más poderoso.
+                </p>
+            </div>
+
+            <div class="intro-slide" id="slide-4">
+                <div class="intro-icono">🥚</div>
+                <h2 class="intro-titulo">El Huevo Espiritual</h2>
+                <p class="intro-texto">
+                    En una noche de luna roja, el sabio reunió plumas,
+                    agua de lluvia y tierra sagrada. Y dijo:
+                    <em>"Que el amor que se da a los seres vivos no desaparezca… que tome forma."</em>
+                </p>
+            </div>
+
+            <div class="intro-slide" id="slide-5">
+                <div class="intro-icono">✨</div>
+                <h2 class="intro-titulo">Tu Turno</h2>
+                <p class="intro-texto">
+                    El huevo espiritual espera ser despertado.
+                    <br><br>
+                    <strong>"No es una mascota. Es un espejo del amor que das a lo vivo."</strong>
+                </p>
+                <button class="btn-intro" id="btn-comenzar">
+                    Despertar la Criatura
+                </button>
+            </div>
+
+            <!-- controles de navegación -->
+            <div class="intro-nav">
+                <button class="btn-nav" id="btn-anterior">←</button>
+                <div class="intro-puntos" id="intro-puntos"></div>
+                <button class="btn-nav" id="btn-siguiente">→</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANTALLA CREAR — Nombrar la criatura  -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="pantalla-crear" class="pantalla">
+
+        <div class="crear-contenedor">
+            <div class="huevo-animado">🥚</div>
+            <h2 class="crear-titulo">El huevo espera tu voz...</h2>
+            <p class="crear-subtitulo">Dale un nombre a tu criatura</p>
+
+            <div class="crear-form">
+                <input
+                    type="text"
+                    id="input-nombre"
+                    class="input-nombre"
+                    placeholder="Nombre de la criatura..."
+                    maxlength="20"
+                >
+                <button class="btn-primario" id="btn-crear">
+                    ✨ Despertar
+                </button>
+            </div>
+
+            <p class="crear-advertencia" id="crear-error"></p>
+        </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANTALLA JUEGO — Principal            -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="pantalla-juego" class="pantalla">
+
+        <!-- fondo del bosque -->
+        <div class="bosque-fondo" id="bosque-fondo"></div>
+        <div class="bosque-overlay" id="bosque-overlay"></div>
+
+        <!-- header -->
+        <header class="juego-header">
+            <div class="header-bosque">
+                <span class="header-label">🌳 Bosque</span>
+                <div class="barra-contenedor">
+                    <div class="barra barra-bosque" id="barra-bosque"></div>
+                </div>
+                <span class="header-valor" id="valor-bosque">100</span>
+            </div>
+            <div class="header-info">
+                <span id="nombre-criatura" class="criatura-nombre">—</span>
+                <span id="fase-criatura" class="criatura-fase">—</span>
+            </div>
+            <div class="header-dias">
+                <span class="header-label">Día</span>
+                <span id="dias-vividos" class="dias-numero">0</span>
+                <span class="header-label">/ 15</span>
+            </div>
+        </header>
+
+        <!-- criatura central -->
+        <main class="juego-main">
+
+            <div class="criatura-contenedor">
+                <div class="criatura-aura" id="criatura-aura"></div>
+                <div class="criatura-sprite" id="criatura-sprite">🥚</div>
+                <div class="criatura-sombra"></div>
+            </div>
+
+            <div class="estado-mensaje" id="estado-mensaje">
+                El bosque aguarda...
+            </div>
+
+        </main>
+
+        <!-- estadísticas -->
+        <section class="stats-panel">
+
+            <div class="stat-item">
+                <span class="stat-icono">❤️</span>
+                <span class="stat-label">Vitalidad</span>
+                <div class="barra-contenedor">
+                    <div class="barra barra-vitalidad" id="barra-vitalidad"></div>
+                </div>
+                <span class="stat-valor" id="val-vitalidad">100</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-icono">🍃</span>
+                <span class="stat-label">Hambre</span>
+                <div class="barra-contenedor">
+                    <div class="barra barra-hambre" id="barra-hambre"></div>
+                </div>
+                <span class="stat-valor" id="val-hambre">0</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-icono">✨</span>
+                <span class="stat-label">Espíritu</span>
+                <div class="barra-contenedor">
+                    <div class="barra barra-espiritu" id="barra-espiritu"></div>
+                </div>
+                <span class="stat-valor" id="val-espiritu">100</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-icono">🌙</span>
+                <span class="stat-label">Energía</span>
+                <div class="barra-contenedor">
+                    <div class="barra barra-energia" id="barra-energia"></div>
+                </div>
+                <span class="stat-valor" id="val-energia">100</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-icono">💚</span>
+                <span class="stat-label">Vínculo</span>
+                <div class="barra-contenedor">
+                    <div class="barra barra-vinculo" id="barra-vinculo"></div>
+                </div>
+                <span class="stat-valor" id="val-vinculo">50</span>
+            </div>
+
+        </section>
+
+        <!-- acciones -->
+        <section class="acciones-panel" id="acciones-panel">
+
+            <button class="btn-accion" data-accion="alimentar" title="Alimentar">
+                <span class="accion-icono">🍃</span>
+                <span class="accion-label">Alimentar</span>
+            </button>
+
+            <button class="btn-accion" data-accion="jugar" title="Jugar">
+                <span class="accion-icono">🎵</span>
+                <span class="accion-label">Jugar</span>
+            </button>
+
+            <button class="btn-accion" data-accion="dormir" title="Dormir">
+                <span class="accion-icono">🌙</span>
+                <span class="accion-label">Dormir</span>
+            </button>
+
+            <button class="btn-accion" data-accion="bañar" title="Bañar">
+                <span class="accion-icono">💧</span>
+                <span class="accion-label">Bañar</span>
+            </button>
+
+            <button class="btn-accion" data-accion="meditar" title="Meditar">
+                <span class="accion-icono">🌿</span>
+                <span class="accion-label">Meditar</span>
+            </button>
+
+            <button class="btn-accion" data-accion="hablar" title="Hablar">
+                <span class="accion-icono">💬</span>
+                <span class="accion-label">Hablar</span>
+            </button>
+
+        </section>
+
+        <!-- notificación flotante -->
+        <div class="notificacion" id="notificacion"></div>
+
+        <!-- audio de fondo -->
+        <audio id="musica-fondo" loop></audio>
+
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANTALLA FIN — Retorno o Pérdida      -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="pantalla-fin" class="pantalla">
+
+        <div class="fin-contenedor">
+            <div class="fin-icono" id="fin-icono">✨</div>
+            <h2 class="fin-titulo" id="fin-titulo">El ciclo se completa</h2>
+            <p class="fin-mensaje" id="fin-mensaje"></p>
+            <p class="fin-reflexion">
+                "Quien aprende a cuidar a un ser pequeño,
+                aprende a respetar toda vida."
+            </p>
+            <button class="btn-primario" id="btn-reiniciar">
+                🌱 Iniciar nuevo ciclo
+            </button>
+        </div>
+
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
