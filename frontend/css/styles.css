@@ -229,10 +229,11 @@ body {
     justify-content : center;
 }
 .criatura-sprite img {
-    width      : 180px;
-    height     : 180px;
-    object-fit : contain;
-    animation  : flotar 3s ease-in-out infinite;
+    width          : 180px;
+    height         : 180px;
+    object-fit     : contain;
+    animation      : flotar 3s ease-in-out infinite;
+    mix-blend-mode : multiply;
 }
 .criatura-sombra {
     position      : absolute;
