@@ -874,6 +874,7 @@ dom.inputNombre.addEventListener('keypress', (e) => {
 
 
 async function cargarEstado() {
+    GestorAudio.detenerTodo()
     try {
         const res  = await fetch(`${API}/estado`)
         const data = await res.json()
