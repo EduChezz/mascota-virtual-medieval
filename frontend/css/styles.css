@@ -1152,3 +1152,150 @@ body {
     border-color : var(--color-acento);
     color        : var(--color-acento);
 }
+
+/* ══════════════════════════════════════════════
+   ANIMACIONES DE SYLVAE POR ESTADO
+   ══════════════════════════════════════════════ */
+
+/* ── Contenedor con transiciones suaves ──────── */
+.criatura-sprite img {
+    transition : filter 1s ease, transform 0.5s ease;
+}
+
+/* ── PAZ — flota suave ────────────────────────── */
+.sylvae-paz img {
+    animation : sylvaePaz 4s ease-in-out infinite !important;
+}
+
+@keyframes sylvaePaz {
+    0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+    25%       { transform: translateY(-15px) rotate(2deg) scale(1.02); }
+    75%       { transform: translateY(-8px) rotate(-2deg) scale(0.98); }
+}
+
+/* ── ALEGRE — salta y gira ────────────────────── */
+.sylvae-alegre img {
+    animation : sylvaeAlegre 1.5s ease-in-out infinite !important;
+    filter    : drop-shadow(0 0 25px rgba(255, 215, 100, 0.8)) brightness(1.2) !important;
+}
+
+@keyframes sylvaeAlegre {
+    0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+    20%       { transform: translateY(-25px) rotate(8deg) scale(1.1); }
+    40%       { transform: translateY(-10px) rotate(-5deg) scale(1.05); }
+    60%       { transform: translateY(-20px) rotate(6deg) scale(1.08); }
+    80%       { transform: translateY(-5px) rotate(-3deg) scale(1.02); }
+}
+
+/* ── SOMNOLIENTO — se inclina lento ──────────── */
+.sylvae-somnoliento img {
+    animation : sylvaeSomnoliento 3s ease-in-out infinite !important;
+    filter    : drop-shadow(0 0 10px rgba(107, 159, 255, 0.4)) brightness(0.85) !important;
+}
+
+@keyframes sylvaeSomnoliento {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    30%       { transform: translateY(5px) rotate(12deg); }
+    60%       { transform: translateY(3px) rotate(8deg); }
+    80%       { transform: translateY(6px) rotate(15deg); }
+}
+
+/* ── HAMBRIENTO — se tambalea ─────────────────── */
+.sylvae-hambriento img {
+    animation : sylvaeHambriento 0.8s ease-in-out infinite !important;
+    filter    : drop-shadow(0 0 10px rgba(200, 169, 110, 0.5)) brightness(0.8) saturate(0.7) !important;
+}
+
+@keyframes sylvaeHambriento {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    25%       { transform: translateY(-5px) rotate(-4deg); }
+    50%       { transform: translateY(3px) rotate(3deg); }
+    75%       { transform: translateY(-3px) rotate(-2deg); }
+}
+
+/* ── TRISTE — se encoge y baja ────────────────── */
+.sylvae-triste img {
+    animation : sylvaeTriste 3s ease-in-out infinite !important;
+    filter    : drop-shadow(0 0 15px rgba(150, 100, 200, 0.4)) brightness(0.7) saturate(0.5) !important;
+}
+
+@keyframes sylvaeTriste {
+    0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
+    40%       { transform: translateY(10px) scale(0.9) rotate(-5deg); }
+    70%       { transform: translateY(5px) scale(0.92) rotate(-3deg); }
+}
+
+/* ── PELIGRO — tiembla intenso ────────────────── */
+.sylvae-peligro img {
+    animation : sylvaePeligro 0.15s ease-in-out infinite !important;
+    filter    : drop-shadow(0 0 30px rgba(139, 32, 32, 0.9)) brightness(0.7) saturate(0.4) !important;
+}
+
+@keyframes sylvaePeligro {
+    0%, 100% { transform: translateX(0) translateY(0) scale(0.95); }
+    25%       { transform: translateX(-6px) translateY(3px) scale(0.93); }
+    75%       { transform: translateX(6px) translateY(-3px) scale(0.97); }
+}
+
+/* ── RETORNO — gira y brilla ──────────────────── */
+.sylvae-retorno img {
+    animation : sylvaeRetorno 3s ease-in-out infinite !important;
+    filter    : drop-shadow(0 0 40px rgba(255, 215, 100, 1)) brightness(1.5) !important;
+}
+
+@keyframes sylvaeRetorno {
+    0%   { transform: translateY(0px) rotate(0deg) scale(1); opacity: 1; }
+    50%  { transform: translateY(-20px) rotate(180deg) scale(1.2); opacity: 0.8; }
+    100% { transform: translateY(0px) rotate(360deg) scale(1); opacity: 1; }
+}
+
+/* ── PERDIDO — se desvanece ───────────────────── */
+.sylvae-perdido img {
+    animation : sylvaePerdido 2s ease-in-out infinite !important;
+    filter    : drop-shadow(0 0 5px rgba(50,50,50,0.3)) brightness(0.4) saturate(0) !important;
+}
+
+@keyframes sylvaePerdido {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50%       { transform: scale(0.85); opacity: 0.3; }
+}
+
+/* ── REACCIÓN AL CLICK de acción ──────────────── */
+.sylvae-reaccion-alimentar img {
+    animation : reaccionAlimentar 0.6s ease forwards !important;
+}
+.sylvae-reaccion-jugar img {
+    animation : reaccionJugar 0.8s ease forwards !important;
+}
+.sylvae-reaccion-dormir img {
+    animation : reaccionDormir 1s ease forwards !important;
+}
+.sylvae-reaccion-meditar img {
+    animation : reaccionMeditar 1.2s ease forwards !important;
+}
+
+@keyframes reaccionAlimentar {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.2) translateY(-10px); }
+    60%  { transform: scale(0.95) translateY(5px); }
+    100% { transform: scale(1); }
+}
+
+@keyframes reaccionJugar {
+    0%   { transform: scale(1) rotate(0deg); }
+    25%  { transform: scale(1.15) rotate(-15deg) translateY(-15px); }
+    50%  { transform: scale(1.1) rotate(15deg) translateY(-20px); }
+    75%  { transform: scale(1.05) rotate(-8deg) translateY(-10px); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes reaccionDormir {
+    0%   { transform: scale(1) rotate(0deg); }
+    50%  { transform: scale(0.9) rotate(20deg) translateY(10px); }
+    100% { transform: scale(1) rotate(15deg) translateY(8px); }
+}
+
+@keyframes reaccionMeditar {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50%       { transform: scale(1.15) translateY(-15px); filter: brightness(1.5); }
+}

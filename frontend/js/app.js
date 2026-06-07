@@ -803,6 +803,33 @@ function _lanzarParticulasEclosion() {
     }
 }
 
+function _reaccionSylvae(accion) {
+    const clasesReaccion = [
+        'sylvae-reaccion-alimentar',
+        'sylvae-reaccion-jugar',
+        'sylvae-reaccion-dormir',
+        'sylvae-reaccion-meditar'
+    ]
+
+    clasesReaccion.forEach(c => dom.criaturaSprite.classList.remove(c))
+
+    const mapaReacciones = {
+        alimentar : 'sylvae-reaccion-alimentar',
+        jugar     : 'sylvae-reaccion-jugar',
+        dormir    : 'sylvae-reaccion-dormir',
+        meditar   : 'sylvae-reaccion-meditar'
+    }
+
+    const claseReaccion = mapaReacciones[accion]
+    if (!claseReaccion) return
+
+    dom.criaturaSprite.classList.add(claseReaccion)
+
+    setTimeout(() => {
+        dom.criaturaSprite.classList.remove(claseReaccion)
+    }, 1200)
+}
+
 // ── Evento botón calentar ─────────────────────
 document.getElementById('btn-calentar')?.addEventListener('click', () => {
     Huevo.calentar()
@@ -1031,8 +1058,42 @@ function obtenerColorTipo(tipo) {
 
 function actualizarAura(estadoNombre, tipo) {
     const color = obtenerColorTipo(tipo)
+
+    // aura
     dom.criaturaAura.style.background =
         `radial-gradient(circle, ${color} 0%, transparent 70%)`
+
+    // ── animación de Sylvae según estado ─────
+    const clases = [
+        'sylvae-paz', 'sylvae-alegre', 'sylvae-somnoliento',
+        'sylvae-hambriento', 'sylvae-triste', 'sylvae-peligro',
+        'sylvae-retorno', 'sylvae-perdido'
+    ]
+
+    // quitar todas las clases de estado
+    clases.forEach(c => dom.criaturaSprite.classList.remove(c))
+
+    // mapeo estado → clase CSS
+    const mapaClases = {
+        paz         : 'sylvae-paz',
+        alegre      : 'sylvae-alegre',
+        somnoliento : 'sylvae-somnoliento',
+        hambriento  : 'sylvae-hambriento',
+        triste      : 'sylvae-triste',
+        peligro     : 'sylvae-peligro',
+        retorno     : 'sylvae-retorno',
+        perdido     : 'sylvae-perdido'
+    }
+
+    const claseEstado = mapaClases[estadoNombre] || 'sylvae-paz'
+    dom.criaturaSprite.classList.add(claseEstado)
+
+    // tamaño según fase
+    const img = dom.criaturaSprite.querySelector('img')
+    if (img) {
+        img.style.width  = '280px'
+        img.style.height = '280px'
+    }
 }
 
 function actualizarBotonesAccion(accionesDisponibles) {
@@ -1134,6 +1195,8 @@ async function ejecutarAccion(nombreAccion, btn) {
         `/assets/sounds/acciones/${nombreAccion}.mp3`,
         30000
     )
+
+    _reaccionSylvae(nombreAccion)
 
     try {
         const res  = await fetch(`${API}/accion`, {
