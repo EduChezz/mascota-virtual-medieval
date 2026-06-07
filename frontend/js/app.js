@@ -1,40 +1,189 @@
 // ============================================
-// APP.JS — Lógica del Frontend
-// El Juramento del Bosque Vivo
-// Con sistema de sonidos completo
+// APP.JS — El Juramento del Bosque Vivo
+// Con sistema de cooldown visual + audio
+// + Modo Normal / Modo Demo
 // ============================================
 
 const API = 'https://mascota-virtual-medieval.onrender.com/api/mascota'
 
 // ════════════════════════════════════════════
-// GESTOR DE AUDIO
+// CONFIGURACIÓN DE MODOS
 // ════════════════════════════════════════════
 
-const Audio_ = {
-    musicaActual : null,
-    efectoActual : null,
-    volumenMusica: 0.4,
-    volumenEfecto: 0.7,
-
-    reproducirMusica(ruta) {
-        if (this.musicaActual) {
-            this.musicaActual.pause()
-            this.musicaActual.currentTime = 0
+const MODOS = {
+    normal : {
+        nombre    : 'Normal',
+        cooldowns : {
+            alimentar : 7200,   // 2 horas
+            jugar     : 3600,   // 1 hora
+            dormir    : 28800,  // 8 horas
+            bañar     : 14400,  // 4 horas
+            meditar   : 21600,  // 6 horas
+            hablar    : 1800    // 30 minutos
         }
-        this.musicaActual = new Audio(ruta)
-        this.musicaActual.loop   = true
-        this.musicaActual.volume = this.volumenMusica
-        this.musicaActual.play().catch(() => {})
+    },
+    demo : {
+        nombre    : 'Demo',
+        cooldowns : {
+            alimentar : 120,   // 2 minutos
+            jugar     : 60,    // 1 minuto
+            dormir    : 240,   // 4 minutos
+            bañar     : 180,   // 3 minutos
+            meditar   : 180,   // 3 minutos
+            hablar    : 30     // 30 segundos
+        }
+    }
+}
+
+let modoActual = 'normal'
+
+// ════════════════════════════════════════════
+// GESTOR DE AUDIO — 3 canales separados
+// ════════════════════════════════════════════
+
+const GestorAudio = {
+
+    canales : {
+        musica  : null,   // música de fondo (loop)
+        efecto  : null,   // efectos de acción
+        criatura: null    // sonidos de criatura
     },
 
-    reproducirEfecto(ruta) {
-        const efecto = new Audio(ruta)
-        efecto.volume = this.volumenEfecto
-        efecto.play().catch(() => {})
+    volumenes : {
+        musica  : 0.4,
+        efecto  : 0.6,
+        criatura: 0.25
     },
 
-    pausarMusica() {
-        if (this.musicaActual) this.musicaActual.pause()
+    ultimaSonidoCriatura : 0,
+    cooldownCriatura     : 45000,  // 45 segundos
+
+    // ── Música de fondo ───────────────────────
+    reproducirMusica(ruta) {
+        if (this.canales.musica?.src?.includes(ruta)) return
+        this._fadeOut(this.canales.musica, 2000, () => {
+            this.canales.musica     = new Audio(ruta)
+            this.canales.musica.loop   = true
+            this.canales.musica.volume = 0
+            this.canales.musica.play().catch(() => {})
+            this._fadeIn(this.canales.musica, 2000, this.volumenes.musica)
+        })
+    },
+
+    pausarMusica(duracion = 0) {
+        if (!this.canales.musica) return
+        this._fadeOut(this.canales.musica, 1000, () => {
+            this.canales.musica.pause()
+            if (duracion > 0) {
+                setTimeout(() => {
+                    this.canales.musica.play().catch(() => {})
+                    this._fadeIn(this.canales.musica, 1000, this.volumenes.musica)
+                }, duracion)
+            }
+        })
+    },
+
+    // ── Efectos de acción ─────────────────────
+    reproducirEfecto(ruta, duracionMax = 30000) {
+        if (this.canales.efecto) {
+            this.canales.efecto.pause()
+            this.canales.efecto = null
+        }
+
+        // bajar música mientras suena el efecto
+        if (this.canales.musica) {
+            this._fadeVolumen(this.canales.musica, this.volumenes.musica * 0.4, 500)
+        }
+
+        this.canales.efecto        = new Audio(ruta)
+        this.canales.efecto.volume = this.volumenes.efecto
+        this.canales.efecto.play().catch(() => {})
+
+        // cortar si excede duracion máxima
+        const timeout = setTimeout(() => {
+            if (this.canales.efecto) {
+                this._fadeOut(this.canales.efecto, 1000)
+                this.canales.efecto = null
+            }
+            this._restaurarMusica()
+        }, duracionMax)
+
+        // cuando termina naturalmente
+        this.canales.efecto.onended = () => {
+            clearTimeout(timeout)
+            this.canales.efecto = null
+            this._restaurarMusica()
+        }
+    },
+
+    // ── Sonidos de criatura ───────────────────
+    reproducirCriatura(ruta) {
+        const ahora = Date.now()
+        if (ahora - this.ultimaSonidoCriatura < this.cooldownCriatura) return
+
+        this.ultimaSonidoCriatura = ahora
+        this.canales.criatura     = new Audio(ruta)
+        this.canales.criatura.volume = this.volumenes.criatura
+        this.canales.criatura.play().catch(() => {})
+    },
+
+    // ── Eventos especiales ────────────────────
+    reproducirEvento(ruta, pausaMusica = 4000) {
+        this.pausarMusica(pausaMusica)
+        setTimeout(() => {
+            this.reproducirEfecto(ruta, pausaMusica)
+        }, 500)
+    },
+
+    // ── Helpers internos ──────────────────────
+    _restaurarMusica() {
+        if (this.canales.musica) {
+            this._fadeVolumen(this.canales.musica, this.volumenes.musica, 1000)
+        }
+    },
+
+    _fadeIn(audio, duracion, volumenFinal) {
+        if (!audio) return
+        audio.volume = 0
+        const pasos     = 20
+        const intervalo = duracion / pasos
+        const incremento = volumenFinal / pasos
+        let paso = 0
+        const timer = setInterval(() => {
+            paso++
+            audio.volume = Math.min(volumenFinal, audio.volume + incremento)
+            if (paso >= pasos) clearInterval(timer)
+        }, intervalo)
+    },
+
+    _fadeOut(audio, duracion, callback) {
+        if (!audio) { if (callback) callback(); return }
+        const pasos     = 20
+        const intervalo = duracion / pasos
+        const decremento = audio.volume / pasos
+        let paso = 0
+        const timer = setInterval(() => {
+            paso++
+            audio.volume = Math.max(0, audio.volume - decremento)
+            if (paso >= pasos) {
+                clearInterval(timer)
+                audio.pause()
+                if (callback) callback()
+            }
+        }, intervalo)
+    },
+
+    _fadeVolumen(audio, volumenFinal, duracion) {
+        if (!audio) return
+        const pasos      = 10
+        const intervalo  = duracion / pasos
+        const diferencia = (volumenFinal - audio.volume) / pasos
+        let paso = 0
+        const timer = setInterval(() => {
+            paso++
+            audio.volume = Math.max(0, Math.min(1, audio.volume + diferencia))
+            if (paso >= pasos) clearInterval(timer)
+        }, intervalo)
     },
 
     getMusicaBosque(salud) {
@@ -42,8 +191,8 @@ const Audio_ = {
         return '/assets/sounds/ambiente/bosque_enfermo.mp3'
     },
 
-    getSonidoCriatura(estado) {
-        const sonidos = {
+    getSonidoCriatura(estadoNombre) {
+        const mapa = {
             alegre      : '/assets/sounds/criatura/feliz.mp3',
             paz         : '/assets/sounds/criatura/feliz.mp3',
             hambriento  : '/assets/sounds/criatura/triste.mp3',
@@ -52,7 +201,95 @@ const Audio_ = {
             peligro     : '/assets/sounds/criatura/peligro.mp3',
             perdido     : '/assets/sounds/criatura/peligro.mp3'
         }
-        return sonidos[estado] || '/assets/sounds/criatura/feliz.mp3'
+        return mapa[estadoNombre] || '/assets/sounds/criatura/feliz.mp3'
+    }
+}
+
+// ════════════════════════════════════════════
+// SISTEMA DE COOLDOWN VISUAL
+// ════════════════════════════════════════════
+
+const CooldownManager = {
+
+    timers    : {},
+    intervalos: {},
+
+    iniciar(accion, segundos) {
+        const btn     = document.querySelector(`[data-accion="${accion}"]`)
+        const barra   = document.getElementById(`cd-${accion}`)
+        const texto   = document.getElementById(`txt-${accion}`)
+        if (!btn || !barra || !texto) return
+
+        // limpiar timer anterior
+        this.limpiar(accion)
+
+        btn.disabled = true
+        btn.classList.add('en-cooldown')
+        btn.classList.remove('listo')
+
+        let restante = segundos
+        barra.style.width = '100%'
+        barra.classList.remove('urgente')
+
+        // actualizar cada segundo
+        this.intervalos[accion] = setInterval(() => {
+            restante--
+            const porcentaje = (restante / segundos) * 100
+            barra.style.width = `${porcentaje}%`
+            texto.textContent = this._formatearTiempo(restante)
+
+            // urgente cuando queda menos del 20%
+            if (porcentaje < 20) {
+                barra.classList.add('urgente')
+            }
+
+            if (restante <= 0) {
+                this.completar(accion)
+            }
+        }, 1000)
+
+        texto.textContent = this._formatearTiempo(restante)
+    },
+
+    completar(accion) {
+        this.limpiar(accion)
+        const btn   = document.querySelector(`[data-accion="${accion}"]`)
+        const barra = document.getElementById(`cd-${accion}`)
+        const texto = document.getElementById(`txt-${accion}`)
+        if (!btn) return
+
+        btn.disabled = false
+        btn.classList.remove('en-cooldown')
+        btn.classList.add('listo')
+        if (barra) { barra.style.width = '0%'; barra.classList.remove('urgente') }
+        if (texto) texto.textContent = '✅ Listo'
+
+        setTimeout(() => {
+            btn.classList.remove('listo')
+            if (texto) texto.textContent = ''
+        }, 2000)
+    },
+
+    limpiar(accion) {
+        if (this.intervalos[accion]) {
+            clearInterval(this.intervalos[accion])
+            delete this.intervalos[accion]
+        }
+    },
+
+    limpiarTodos() {
+        Object.keys(this.intervalos).forEach(a => this.limpiar(a))
+    },
+
+    _formatearTiempo(segundos) {
+        if (segundos <= 0) return ''
+        if (segundos < 60) return `${segundos}s`
+        const min = Math.floor(segundos / 60)
+        const sec = segundos % 60
+        if (min < 60) return `${min}m ${sec}s`
+        const hrs = Math.floor(min / 60)
+        const mn  = min % 60
+        return `${hrs}h ${mn}m`
     }
 }
 
@@ -102,6 +339,7 @@ const dom = {
     accionesPanel  : document.getElementById('acciones-panel'),
     botonesAccion  : document.querySelectorAll('.btn-accion'),
     notificacion   : document.getElementById('notificacion'),
+    btnModo        : document.getElementById('btn-modo'),
     stats : {
         vitalidad : { barra: document.getElementById('barra-vitalidad'), val: document.getElementById('val-vitalidad') },
         hambre    : { barra: document.getElementById('barra-hambre'),    val: document.getElementById('val-hambre')    },
@@ -114,6 +352,26 @@ const dom = {
     finMensaje  : document.getElementById('fin-mensaje'),
     btnReiniciar: document.getElementById('btn-reiniciar')
 }
+
+// ════════════════════════════════════════════
+// BOTÓN MODO DEMO / NORMAL
+// ════════════════════════════════════════════
+
+dom.btnModo.addEventListener('click', () => {
+    modoActual = modoActual === 'normal' ? 'demo' : 'normal'
+    const modo = MODOS[modoActual]
+
+    dom.btnModo.querySelector('.accion-label').textContent =
+        modoActual === 'demo' ? '⚡ Demo ON' : 'Modo Demo'
+    dom.btnModo.classList.toggle('demo-activo', modoActual === 'demo')
+
+    mostrarNotificacion(
+        modoActual === 'demo'
+            ? '⚡ Modo Demo activado — cooldowns reducidos'
+            : '🌿 Modo Normal activado',
+        false
+    )
+})
 
 // ════════════════════════════════════════════
 // NAVEGACIÓN ENTRE PANTALLAS
@@ -148,8 +406,7 @@ function iniciarIntro() {
         dom.introPuntos.appendChild(punto)
     }
     mostrarSlide(0)
-    // música de intro
-    Audio_.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
+    GestorAudio.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
 }
 
 function mostrarSlide(indice) {
@@ -168,7 +425,7 @@ function irASlide(indice) {
 dom.btnSiguiente.addEventListener('click', () => irASlide(estado.slideActual + 1))
 dom.btnAnterior.addEventListener('click',  () => irASlide(estado.slideActual - 1))
 dom.btnComenzar.addEventListener('click',  () => {
-    Audio_.pausarMusica()
+    GestorAudio.pausarMusica()
     mostrarPantalla('crear')
 })
 
@@ -199,17 +456,17 @@ dom.btnCrear.addEventListener('click', async () => {
 
         if (data.exito) {
             estado.datosCriatura = data.datos
-            // sonido de nacimiento
-            Audio_.reproducirEfecto('/assets/sounds/eventos/nacimiento.mp3')
+            GestorAudio.reproducirEvento('/assets/sounds/eventos/nacimiento.mp3', 3000)
+            mostrarNotificacion(`¡${nombre} ha despertado del huevo espiritual!`)
             setTimeout(() => {
                 mostrarPantalla('juego')
                 actualizarJuego(data.datos)
                 iniciarTickAutomatico()
                 iniciarParticulas(data.datos)
-                // música del bosque
-                Audio_.reproducirMusica(Audio_.getMusicaBosque(data.datos.bosque?.salud ?? 100))
-            }, 1500)
-            mostrarNotificacion(`¡${nombre} ha despertado del huevo espiritual!`)
+                GestorAudio.reproducirMusica(
+                    GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
+                )
+            }, 2000)
         } else {
             if (data.mensaje.includes('Ya existe')) {
                 await cargarEstado()
@@ -244,7 +501,9 @@ async function cargarEstado() {
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
             iniciarParticulas(data.datos)
-            Audio_.reproducirMusica(Audio_.getMusicaBosque(data.datos.bosque?.salud ?? 100))
+            GestorAudio.reproducirMusica(
+                GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
+            )
         }
     } catch (error) {
         console.error('Error al cargar estado:', error)
@@ -261,18 +520,15 @@ function actualizarJuego(datos) {
     const { nombre, fase, tipoEvolucion, estado: est,
             estadisticas, bosque, diasVividos, imagenActual } = datos
 
-    // header
     dom.nombreCriatura.textContent = nombre
     dom.faseCriatura.textContent   = obtenerLabelFase(fase, tipoEvolucion)
     dom.diasVividos.textContent    = diasVividos
 
-    // bosque
     const saludBosque = bosque?.salud ?? 100
     dom.barraBosque.style.width = `${saludBosque}%`
     dom.valorBosque.textContent = saludBosque
     actualizarFondoBosque(saludBosque)
 
-    // estadísticas
     if (estadisticas) {
         actualizarStat('vitalidad', estadisticas.vitalidad)
         actualizarStat('hambre',    estadisticas.hambre)
@@ -281,35 +537,25 @@ function actualizarJuego(datos) {
         actualizarStat('vinculo',   estadisticas.vinculo)
     }
 
-    // imagen
     actualizarImagenCriatura(imagenActual, fase, tipoEvolucion)
-
-    // mensaje
     if (est?.mensaje) dom.estadoMensaje.textContent = est.mensaje
-
-    // aura
     actualizarAura(est?.nombre, tipoEvolucion)
-
-    // botones
     if (est?.acciones) actualizarBotonesAccion(est.acciones)
-
-    // partículas
     actualizarParticulas(saludBosque, tipoEvolucion)
 
     // sonido criatura cuando cambia estado
-    if (estado.estadoAnterior !== est?.nombre) {
-        if (est?.nombre && estado.estadoAnterior !== null) {
-            setTimeout(() => {
-                Audio_.reproducirEfecto(Audio_.getSonidoCriatura(est.nombre))
-            }, 500)
-        }
-        estado.estadoAnterior = est?.nombre
+    if (estado.estadoAnterior !== est?.nombre && estado.estadoAnterior !== null) {
+        GestorAudio.reproducirCriatura(GestorAudio.getSonidoCriatura(est?.nombre))
     }
+    estado.estadoAnterior = est?.nombre
 
-    // música según salud del bosque
-    const musicaCorrecta = Audio_.getMusicaBosque(saludBosque)
-    if (Audio_.musicaActual?.src && !Audio_.musicaActual.src.includes(musicaCorrecta)) {
-        Audio_.reproducirMusica(musicaCorrecta)
+    // cambiar música según bosque
+    const musicaCorrecta = GestorAudio.getMusicaBosque(saludBosque)
+    if (GestorAudio.canales.musica &&
+        !GestorAudio.canales.musica.src?.includes(
+            musicaCorrecta.split('/').pop()
+        )) {
+        GestorAudio.reproducirMusica(musicaCorrecta)
     }
 
     // fin de juego
@@ -350,7 +596,6 @@ function actualizarFondoBosque(salud) {
     else if (salud >= 50) fondo = "url('/assets/images/bosque/bosque_75.png')"
     else if (salud >= 25) fondo = "url('/assets/images/bosque/bosque_50.png')"
     else                  fondo = "url('/assets/images/bosque/bosque_muerto.png')"
-
     dom.bosqueFondo.style.backgroundImage    = fondo
     dom.bosqueFondo.style.backgroundSize     = 'cover'
     dom.bosqueFondo.style.backgroundPosition = 'center'
@@ -362,7 +607,7 @@ function actualizarImagenCriatura(imagenActual, fase, tipo) {
     img.src   = imagenActual || '/assets/images/criatura/huevo.png'
     img.alt   = 'Sylvae'
     img.onerror = () => {
-        dom.criaturaSprite.innerHTML  = fase === 'huevo' ? '🥚' : '🐾'
+        dom.criaturaSprite.innerHTML      = fase === 'huevo' ? '🥚' : '🐾'
         dom.criaturaSprite.style.fontSize = '7rem'
     }
     dom.criaturaSprite.appendChild(img)
@@ -389,12 +634,90 @@ function actualizarAura(estadoNombre, tipo) {
 
 function actualizarBotonesAccion(accionesDisponibles) {
     dom.botonesAccion.forEach(btn => {
-        btn.disabled = !accionesDisponibles.includes(btn.dataset.accion)
+        const accion = btn.dataset.accion
+        if (!accionesDisponibles.includes(accion)) {
+            if (!btn.classList.contains('en-cooldown')) {
+                btn.disabled = true
+            }
+        }
     })
 }
 
 // ════════════════════════════════════════════
-// SISTEMA DE PARTÍCULAS
+// EJECUTAR ACCIONES
+// ════════════════════════════════════════════
+
+dom.botonesAccion.forEach(btn => {
+    btn.addEventListener('click', async () => {
+        if (btn.disabled) return
+        await ejecutarAccion(btn.dataset.accion, btn)
+    })
+})
+
+async function ejecutarAccion(nombreAccion, btn) {
+    btn.disabled = true
+    const cooldownSegundos = MODOS[modoActual].cooldowns[nombreAccion] || 60
+
+    // reproducir efecto de acción (máximo 30s)
+    GestorAudio.reproducirEfecto(
+        `/assets/sounds/acciones/${nombreAccion}.mp3`,
+        30000
+    )
+
+    try {
+        const res  = await fetch(`${API}/accion`, {
+            method  : 'POST',
+            headers : { 'Content-Type': 'application/json' },
+            body    : JSON.stringify({ nombreAccion })
+        })
+        const data = await res.json()
+
+        if (data.exito) {
+            // verificar evolución
+            const faseAnterior = estado.datosCriatura?.fase
+            const faseNueva    = data.datos?.fase
+            if (faseAnterior !== faseNueva) {
+                GestorAudio.reproducirEvento('/assets/sounds/eventos/evolucion.mp3', 4000)
+                mostrarNotificacion(`✨ ¡${data.datos.nombre} ha evolucionado a ${obtenerLabelFase(faseNueva, data.datos.tipoEvolucion)}!`)
+            }
+
+            estado.datosCriatura = data.datos
+            actualizarJuego(data.datos)
+            mostrarNotificacion(data.mensaje)
+
+            // iniciar cooldown visual
+            CooldownManager.iniciar(nombreAccion, cooldownSegundos)
+
+        } else {
+            mostrarNotificacion(data.mensaje, true)
+            btn.disabled = false
+        }
+    } catch (error) {
+        mostrarNotificacion('Error al conectar con el bosque', true)
+        btn.disabled = false
+        console.error(error)
+    }
+}
+
+// ════════════════════════════════════════════
+// TICK AUTOMÁTICO
+// ════════════════════════════════════════════
+
+function iniciarTickAutomatico() {
+    if (estado.tickInterval) clearInterval(estado.tickInterval)
+    estado.tickInterval = setInterval(async () => {
+        try {
+            const res  = await fetch(`${API}/tick`, { method: 'POST' })
+            const data = await res.json()
+            if (data.exito) actualizarJuego(data.datos)
+        } catch (error) {
+            console.error('Error en tick:', error)
+        }
+    }, 30000)
+}
+
+// ════════════════════════════════════════════
+// PARTÍCULAS
 // ════════════════════════════════════════════
 
 let contenedorParticulas = null
@@ -404,8 +727,7 @@ function iniciarParticulas(datos) {
         contenedorParticulas = document.createElement('div')
         contenedorParticulas.id = 'particulas-contenedor'
         contenedorParticulas.style.cssText = `
-            position: fixed; inset: 0;
-            pointer-events: none; z-index: 5; overflow: hidden;
+            position:fixed; inset:0; pointer-events:none; z-index:5; overflow:hidden;
         `
         document.getElementById('pantalla-juego').appendChild(contenedorParticulas)
     }
@@ -439,12 +761,7 @@ function crearMariposa() {
     const emojis = ['🦋', '🦋', '🌸', '🦋']
     const duration = 6000 + Math.random() * 4000
     el.textContent = emojis[Math.floor(Math.random() * emojis.length)]
-    el.style.cssText = `
-        position:absolute; font-size:${0.8 + Math.random() * 0.8}rem;
-        left:${Math.random() * window.innerWidth}px; bottom:-30px;
-        opacity:0; animation:volarMariposa ${duration}ms ease-in-out forwards;
-        pointer-events:none;
-    `
+    el.style.cssText = `position:absolute;font-size:${0.8+Math.random()*0.8}rem;left:${Math.random()*window.innerWidth}px;bottom:-30px;opacity:0;animation:volarMariposa ${duration}ms ease-in-out forwards;pointer-events:none;`
     contenedorParticulas.appendChild(el)
     setTimeout(() => el.remove(), duration)
 }
@@ -452,44 +769,27 @@ function crearMariposa() {
 function crearLuciernaga() {
     const el = document.createElement('div')
     const duration = 3000 + Math.random() * 3000
-    el.style.cssText = `
-        position:absolute; width:6px; height:6px;
-        background:radial-gradient(circle,#7fff7f,transparent);
-        border-radius:50%; left:${Math.random() * window.innerWidth}px;
-        top:${Math.random() * window.innerHeight}px;
-        animation:pulsarLuciernaga ${duration}ms ease-in-out forwards;
-        pointer-events:none; box-shadow:0 0 8px #7fff7f;
-    `
+    el.style.cssText = `position:absolute;width:6px;height:6px;background:radial-gradient(circle,#7fff7f,transparent);border-radius:50%;left:${Math.random()*window.innerWidth}px;top:${Math.random()*window.innerHeight}px;animation:pulsarLuciernaga ${duration}ms ease-in-out forwards;pointer-events:none;box-shadow:0 0 8px #7fff7f;`
     contenedorParticulas.appendChild(el)
     setTimeout(() => el.remove(), duration)
 }
 
 function crearHoja() {
     const el = document.createElement('div')
-    const emojis = ['🍃', '🌿', '🍀']
+    const emojis = ['🍃','🌿','🍀']
     const duration = 4000 + Math.random() * 3000
-    el.textContent = emojis[Math.floor(Math.random() * emojis.length)]
-    el.style.cssText = `
-        position:absolute; font-size:${0.6 + Math.random() * 0.6}rem;
-        left:${Math.random() * window.innerWidth}px; top:-20px;
-        opacity:0.7; animation:caerHoja ${duration}ms ease-in forwards;
-        pointer-events:none;
-    `
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)]
+    el.style.cssText = `position:absolute;font-size:${0.6+Math.random()*0.6}rem;left:${Math.random()*window.innerWidth}px;top:-20px;opacity:0.7;animation:caerHoja ${duration}ms ease-in forwards;pointer-events:none;`
     contenedorParticulas.appendChild(el)
     setTimeout(() => el.remove(), duration)
 }
 
 function crearHojaSeca() {
     const el = document.createElement('div')
-    const emojis = ['🍂', '🍁', '🍂']
+    const emojis = ['🍂','🍁','🍂']
     const duration = 3000 + Math.random() * 2000
-    el.textContent = emojis[Math.floor(Math.random() * emojis.length)]
-    el.style.cssText = `
-        position:absolute; font-size:${0.6 + Math.random() * 0.8}rem;
-        left:${Math.random() * window.innerWidth}px; top:-20px;
-        opacity:0.6; animation:caerHoja ${duration}ms ease-in forwards;
-        pointer-events:none;
-    `
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)]
+    el.style.cssText = `position:absolute;font-size:${0.6+Math.random()*0.8}rem;left:${Math.random()*window.innerWidth}px;top:-20px;opacity:0.6;animation:caerHoja ${duration}ms ease-in forwards;pointer-events:none;`
     contenedorParticulas.appendChild(el)
     setTimeout(() => el.remove(), duration)
 }
@@ -497,81 +797,9 @@ function crearHojaSeca() {
 function crearCeniza() {
     const el = document.createElement('div')
     const duration = 4000 + Math.random() * 3000
-    el.style.cssText = `
-        position:absolute; width:${3 + Math.random() * 4}px;
-        height:${3 + Math.random() * 4}px;
-        background:rgba(150,100,100,0.6); border-radius:50%;
-        left:${Math.random() * window.innerWidth}px; top:-10px;
-        animation:caerHoja ${duration}ms ease-in forwards;
-        pointer-events:none;
-    `
+    el.style.cssText = `position:absolute;width:${3+Math.random()*4}px;height:${3+Math.random()*4}px;background:rgba(150,100,100,0.6);border-radius:50%;left:${Math.random()*window.innerWidth}px;top:-10px;animation:caerHoja ${duration}ms ease-in forwards;pointer-events:none;`
     contenedorParticulas.appendChild(el)
     setTimeout(() => el.remove(), duration)
-}
-
-// ════════════════════════════════════════════
-// EJECUTAR ACCIONES
-// ════════════════════════════════════════════
-
-dom.botonesAccion.forEach(btn => {
-    btn.addEventListener('click', async () => {
-        await ejecutarAccion(btn.dataset.accion, btn)
-    })
-})
-
-async function ejecutarAccion(nombreAccion, btn) {
-    btn.disabled = true
-
-    // sonido de la acción
-    Audio_.reproducirEfecto(`/assets/sounds/acciones/${nombreAccion}.mp3`)
-
-    try {
-        const res  = await fetch(`${API}/accion`, {
-            method  : 'POST',
-            headers : { 'Content-Type': 'application/json' },
-            body    : JSON.stringify({ nombreAccion })
-        })
-        const data = await res.json()
-
-        if (data.exito) {
-            // verificar si hubo evolución
-            const faseAnterior = estado.datosCriatura?.fase
-            const faseNueva    = data.datos?.fase
-
-            if (faseAnterior !== faseNueva) {
-                Audio_.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3')
-                mostrarNotificacion(`✨ ¡${data.datos.nombre} ha evolucionado!`)
-            }
-
-            estado.datosCriatura = data.datos
-            actualizarJuego(data.datos)
-            mostrarNotificacion(data.mensaje)
-        } else {
-            mostrarNotificacion(data.mensaje, true)
-        }
-    } catch (error) {
-        mostrarNotificacion('Error al conectar con el bosque', true)
-        console.error(error)
-    } finally {
-        btn.disabled = false
-    }
-}
-
-// ════════════════════════════════════════════
-// TICK AUTOMÁTICO
-// ════════════════════════════════════════════
-
-function iniciarTickAutomatico() {
-    if (estado.tickInterval) clearInterval(estado.tickInterval)
-    estado.tickInterval = setInterval(async () => {
-        try {
-            const res  = await fetch(`${API}/tick`, { method: 'POST' })
-            const data = await res.json()
-            if (data.exito) actualizarJuego(data.datos)
-        } catch (error) {
-            console.error('Error en tick:', error)
-        }
-    }, 30000)
 }
 
 // ════════════════════════════════════════════
@@ -597,9 +825,8 @@ function mostrarNotificacion(mensaje, esError = false) {
 function mostrarPantallaFin(tipoFin, nombre) {
     if (estado.tickInterval) clearInterval(estado.tickInterval)
     if (estado.particulasInterval) clearInterval(estado.particulasInterval)
-
-    Audio_.reproducirEfecto('/assets/sounds/eventos/retorno.mp3')
-    Audio_.pausarMusica()
+    CooldownManager.limpiarTodos()
+    GestorAudio.reproducirEvento('/assets/sounds/eventos/retorno.mp3', 5000)
 
     if (tipoFin === 'retorno') {
         dom.finIcono.textContent   = '✨'
@@ -615,11 +842,12 @@ function mostrarPantallaFin(tipoFin, nombre) {
 
 dom.btnReiniciar.addEventListener('click', async () => {
     try { await fetch(`${API}/reiniciar`, { method: 'DELETE' }) } catch(e) {}
-    estado.datosCriatura   = null
-    estado.estadoAnterior  = null
-    dom.inputNombre.value  = ''
+    estado.datosCriatura  = null
+    estado.estadoAnterior = null
+    dom.inputNombre.value = ''
     if (contenedorParticulas) contenedorParticulas.innerHTML = ''
-    Audio_.pausarMusica()
+    CooldownManager.limpiarTodos()
+    GestorAudio.pausarMusica()
     mostrarPantalla('crear')
 })
 
@@ -640,7 +868,9 @@ async function inicializar() {
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
             iniciarParticulas(data.datos)
-            Audio_.reproducirMusica(Audio_.getMusicaBosque(data.datos.bosque?.salud ?? 100))
+            GestorAudio.reproducirMusica(
+                GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
+            )
         }
     } catch (error) {
         console.log('No hay criatura activa, mostrando intro')

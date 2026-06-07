@@ -412,3 +412,95 @@ body {
 ::-webkit-scrollbar       { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-primario); border-radius: 2px; }
+
+/* ══════════════════════════════════════════════
+   SISTEMA DE COOLDOWN
+   ══════════════════════════════════════════════ */
+
+.btn-accion {
+    position      : relative;
+    min-height    : 75px;
+    padding-bottom: 0.8rem;
+}
+
+.cooldown-barra-contenedor {
+    width         : 100%;
+    height        : 4px;
+    background    : rgba(255, 255, 255, 0.08);
+    border-radius : 2px;
+    overflow      : hidden;
+    margin-top    : 0.3rem;
+}
+
+.cooldown-barra {
+    height        : 100%;
+    width         : 0%;
+    border-radius : 2px;
+    background    : linear-gradient(90deg, #2d6e4e, #7fff7f);
+    transition    : width 1s linear;
+}
+
+.cooldown-barra.urgente {
+    background : linear-gradient(90deg, #8b2020, #ff6b6b);
+    animation  : pulsarUrgente 1s ease-in-out infinite;
+}
+
+.cooldown-texto {
+    font-size   : 0.55rem;
+    color       : var(--color-texto-suave);
+    margin-top  : 0.2rem;
+    min-height  : 0.7rem;
+    display     : block;
+    text-align  : center;
+}
+
+.btn-accion.listo {
+    border-color : var(--color-acento);
+    animation    : listoAnim 0.5s ease;
+}
+
+.btn-accion.en-cooldown {
+    opacity : 0.6;
+    cursor  : not-allowed;
+}
+
+/* ── Botón modo ──────────────────────────────── */
+.btn-modo {
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    gap            : 0.2rem;
+    padding        : 0.6rem 0.8rem;
+    background     : rgba(200, 169, 110, 0.1);
+    border         : 1px solid var(--color-acento2);
+    border-radius  : 12px;
+    color          : var(--color-acento2);
+    cursor         : pointer;
+    transition     : var(--transicion);
+    min-width      : 65px;
+    min-height     : 75px;
+}
+
+.btn-modo:hover {
+    background : rgba(200, 169, 110, 0.2);
+    box-shadow : var(--glow-dorado);
+    transform  : translateY(-2px);
+}
+
+.btn-modo.demo-activo {
+    background   : rgba(255, 100, 100, 0.2);
+    border-color : #ff6b6b;
+    color        : #ff6b6b;
+}
+
+/* ── Animaciones cooldown ─────────────────────── */
+@keyframes pulsarUrgente {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}
+
+@keyframes listoAnim {
+    0%   { transform: scale(1);    box-shadow: none; }
+    50%  { transform: scale(1.05); box-shadow: var(--glow-verde); }
+    100% { transform: scale(1);    box-shadow: none; }
+}
