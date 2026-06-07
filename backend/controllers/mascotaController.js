@@ -1,7 +1,6 @@
 // ============================================
 // CONTROLADOR: mascotaController
-// Maneja la lógica de cada endpoint
-// Conecta la API con las clases POO
+// Actualizado con sistema de evoluciones Sylvae
 // ============================================
 
 import { MascotaModel }  from '../models/MascotaModel.js'
@@ -15,26 +14,22 @@ import { AccionFactory } from '../classes/Acciones.js'
 // ════════════════════════════════════════════
 
 function reconstruirCriatura(doc) {
-
-    // reconstruir criatura desde el documento
     const criatura = Criatura.fromObject({
-        nombre      : doc.nombre,
-        fase        : doc.fase,
-        diasVividos : doc.diasVividos,
-        diasMaximos : doc.diasMaximos,
-        estadisticas: doc.estadisticas,
-        createdAt   : doc.createdAt
+        nombre        : doc.nombre,
+        fase          : doc.fase,
+        tipoEvolucion : doc.tipoEvolucion,
+        diasVividos   : doc.diasVividos,
+        diasMaximos   : doc.diasMaximos,
+        estadisticas  : doc.estadisticas,
+        createdAt     : doc.createdAt
     })
 
-    // reconstruir bosque (singleton)
     const bosque = Bosque.getInstance()
     bosque.cargarDesdeObject(doc.bosque)
 
-    // reconstruir historial (singleton)
     const historial = Historial.getInstance()
     historial.cargarDesdeObject({ registros: doc.historial })
 
-    // conectar observadores
     criatura.agregarObservador(bosque)
     criatura.agregarObservador(historial)
 
@@ -46,17 +41,36 @@ function reconstruirCriatura(doc) {
 // ════════════════════════════════════════════
 
 async function guardarCriatura(doc, criatura, bosque, historial) {
-
-    doc.nombre       = criatura.getNombre()
-    doc.fase         = criatura.getFase()
-    doc.diasVividos  = criatura.getDiasVividos()
-    doc.estadisticas = criatura.getEstadisticas().toObject()
-    doc.estado       = criatura.getEstado().getNombre()
-    doc.bosque       = bosque.toObject()
-    doc.historial    = historial.getRegistros(50)
-
+    doc.nombre        = criatura.getNombre()
+    doc.fase          = criatura.getFase()
+    doc.tipoEvolucion = criatura.getTipoEvolucion()
+    doc.diasVividos   = criatura.getDiasVividos()
+    doc.estadisticas  = criatura.getEstadisticas().toObject()
+    doc.estado        = criatura.getEstado().getNombre()
+    doc.imagenActual  = criatura.getImagenActual()
+    doc.bosque        = bosque.toObject()
+    doc.historial     = historial.getRegistros(50)
     await doc.save()
     return doc
+}
+
+// ════════════════════════════════════════════
+// HELPER — construir respuesta completa
+// ════════════════════════════════════════════
+
+function construirRespuesta(criatura, bosque, historial, doc) {
+    return {
+        id            : doc._id,
+        nombre        : criatura.getNombre(),
+        fase          : criatura.getFase(),
+        tipoEvolucion : criatura.getTipoEvolucion(),
+        estado        : criatura.getEstado().toObject(),
+        estadisticas  : criatura.getEstadisticas().toObject(),
+        bosque        : bosque.toObject(),
+        diasVividos   : criatura.getDiasVividos(),
+        diasMaximos   : criatura.getDiasMaximos(),
+        imagenActual  : criatura.getImagenActual()
+    }
 }
 
 // ════════════════════════════════════════════
@@ -75,7 +89,6 @@ export async function crearMascota(req, res) {
             })
         }
 
-        // verificar si ya existe una mascota activa
         const existente = await MascotaModel.findOne({ activa: true })
         if (existente) {
             return res.status(400).json({
@@ -84,28 +97,26 @@ export async function crearMascota(req, res) {
             })
         }
 
-        // resetear singletons para nueva criatura
         Bosque.resetInstancia()
         Historial.resetInstancia()
 
-        // crear nueva criatura con POO
         const criatura  = new Criatura(nombre.trim())
         const bosque    = Bosque.getInstance()
         const historial = Historial.getInstance()
 
-        // conectar observadores
         criatura.agregarObservador(bosque)
         criatura.agregarObservador(historial)
 
-        // guardar en MongoDB
         const doc = new MascotaModel({
-            nombre       : criatura.getNombre(),
-            fase         : criatura.getFase(),
-            diasVividos  : criatura.getDiasVividos(),
-            estadisticas : criatura.getEstadisticas().toObject(),
-            estado       : criatura.getEstado().getNombre(),
-            bosque       : bosque.toObject(),
-            historial    : []
+            nombre        : criatura.getNombre(),
+            fase          : criatura.getFase(),
+            tipoEvolucion : criatura.getTipoEvolucion(),
+            diasVividos   : criatura.getDiasVividos(),
+            estadisticas  : criatura.getEstadisticas().toObject(),
+            estado        : criatura.getEstado().getNombre(),
+            imagenActual  : criatura.getImagenActual(),
+            bosque        : bosque.toObject(),
+            historial     : []
         })
 
         await doc.save()
@@ -113,16 +124,7 @@ export async function crearMascota(req, res) {
         return res.status(201).json({
             exito   : true,
             mensaje : `¡${nombre} ha nacido del huevo espiritual!`,
-            datos   : {
-                id           : doc._id,
-                nombre       : criatura.getNombre(),
-                fase         : criatura.getFase(),
-                estado       : criatura.getEstado().toObject(),
-                estadisticas : criatura.getEstadisticas().toObject(),
-                bosque       : bosque.toObject(),
-                diasVividos  : criatura.getDiasVividos(),
-                diasMaximos  : criatura.getDiasMaximos()
-            }
+            datos   : construirRespuesta(criatura, bosque, historial, doc)
         })
 
     } catch (error) {
@@ -148,16 +150,9 @@ export async function obtenerEstado(req, res) {
         return res.json({
             exito : true,
             datos : {
-                id           : doc._id,
-                nombre       : criatura.getNombre(),
-                fase         : criatura.getFase(),
-                estado       : criatura.getEstado().toObject(),
-                estadisticas : criatura.getEstadisticas().toObject(),
-                bosque       : bosque.toObject(),
-                diasVividos  : criatura.getDiasVividos(),
-                diasMaximos  : criatura.getDiasMaximos(),
-                historial    : historial.getRegistros(10),
-                resumen      : historial.getResumen()
+                ...construirRespuesta(criatura, bosque, historial, doc),
+                historial : historial.getRegistros(10),
+                resumen   : historial.getResumen()
             }
         })
 
@@ -188,7 +183,6 @@ export async function ejecutarAccion(req, res) {
             })
         }
 
-        // verificar cooldown
         const cooldowns = {
             alimentar : 120,
             jugar     : 60,
@@ -206,10 +200,7 @@ export async function ejecutarAccion(req, res) {
             })
         }
 
-        // reconstruir criatura
         const { criatura, bosque, historial } = reconstruirCriatura(doc)
-
-        // crear acción con Factory
         const accion    = AccionFactory.crear(nombreAccion)
         const resultado = criatura.ejecutarAccion(accion)
 
@@ -220,23 +211,17 @@ export async function ejecutarAccion(req, res) {
             })
         }
 
-        // actualizar timestamp de la acción
         doc.ultimasAcciones[nombreAccion] = new Date()
         doc.markModified('ultimasAcciones')
 
-        // guardar en MongoDB
         await guardarCriatura(doc, criatura, bosque, historial)
 
         return res.json({
             exito   : true,
             mensaje : resultado.resultado.mensaje,
             datos   : {
-                nombre       : criatura.getNombre(),
-                fase         : criatura.getFase(),
-                estado       : criatura.getEstado().toObject(),
-                estadisticas : criatura.getEstadisticas().toObject(),
-                bosque       : bosque.toObject(),
-                efectos      : resultado.resultado.efectos
+                ...construirRespuesta(criatura, bosque, historial, doc),
+                efectos : resultado.resultado.efectos
             }
         })
 
@@ -259,11 +244,8 @@ export async function ejecutarTick(req, res) {
         }
 
         const { criatura, bosque, historial } = reconstruirCriatura(doc)
-
-        // ejecutar degradación diaria
         criatura.tickDiario()
 
-        // verificar si la criatura está perdida
         if (criatura.getEstado().getNombre() === 'perdido') {
             doc.activa = false
         }
@@ -273,14 +255,7 @@ export async function ejecutarTick(req, res) {
         return res.json({
             exito   : true,
             mensaje : `Día ${criatura.getDiasVividos()} del ciclo`,
-            datos   : {
-                nombre       : criatura.getNombre(),
-                fase         : criatura.getFase(),
-                estado       : criatura.getEstado().toObject(),
-                estadisticas : criatura.getEstadisticas().toObject(),
-                bosque       : bosque.toObject(),
-                diasVividos  : criatura.getDiasVividos()
-            }
+            datos   : construirRespuesta(criatura, bosque, historial, doc)
         })
 
     } catch (error) {
@@ -293,7 +268,6 @@ export async function ejecutarTick(req, res) {
 export async function reiniciarJuego(req, res) {
     try {
         await MascotaModel.updateMany({}, { activa: false })
-
         Bosque.resetInstancia()
         Historial.resetInstancia()
 

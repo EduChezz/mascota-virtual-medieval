@@ -1,8 +1,7 @@
 // ============================================
 // MODELO: MascotaModel
 // Define el esquema de MongoDB con Mongoose
-// Aquí se define cómo se guardan los datos
-// de la criatura y el bosque en la base de datos
+// Actualizado con sistema de evoluciones Sylvae
 // ============================================
 
 import mongoose from 'mongoose'
@@ -35,17 +34,24 @@ const RegistroSchema = new mongoose.Schema({
 const MascotaSchema = new mongoose.Schema({
 
     nombre : {
-        type     : String,
-        required : [true, 'La criatura necesita un nombre'],
-        trim     : true,
-        minlength: [2, 'El nombre debe tener al menos 2 caracteres'],
-        maxlength: [20, 'El nombre no puede superar 20 caracteres']
+        type      : String,
+        required  : [true, 'La criatura necesita un nombre'],
+        trim      : true,
+        minlength : [2, 'El nombre debe tener al menos 2 caracteres'],
+        maxlength : [20, 'El nombre no puede superar 20 caracteres']
     },
 
     fase : {
         type    : String,
-        enum    : ['huevo', 'cria', 'joven', 'guardian', 'retorno', 'perdido'],
+        enum    : ['huevo', 'base', 'evolucionada', 'retorno', 'perdido'],
         default : 'huevo'
+    },
+
+    // ── NUEVO: tipo de evolución Sylvae ───────
+    tipoEvolucion : {
+        type    : String,
+        enum    : ['natura', 'umbra', 'ignis', 'aqua', 'aether', 'umbris', null],
+        default : null
     },
 
     diasVividos : {
@@ -79,8 +85,12 @@ const MascotaSchema = new mongoose.Schema({
         default : 'paz'
     },
 
-    // timestamps de última interacción
-    // para calcular cooldowns de acciones
+    // imagen actual calculada
+    imagenActual : {
+        type    : String,
+        default : '/assets/images/criatura/huevo.png'
+    },
+
     ultimasAcciones : {
         alimentar : { type: Date, default: null },
         jugar     : { type: Date, default: null },
@@ -96,23 +106,25 @@ const MascotaSchema = new mongoose.Schema({
     }
 
 }, {
-    timestamps : true    // createdAt y updatedAt automáticos
+    timestamps : true
 })
 
-// ── Método para obtener datos limpios ─────────
+// ── Método para obtener datos completos ───────
 MascotaSchema.methods.getDatosCompletos = function() {
     return {
-        id           : this._id,
-        nombre       : this.nombre,
-        fase         : this.fase,
-        diasVividos  : this.diasVividos,
-        diasMaximos  : this.diasMaximos,
-        estadisticas : this.estadisticas,
-        bosque       : this.bosque,
-        estado       : this.estado,
-        activa       : this.activa,
-        createdAt    : this.createdAt,
-        updatedAt    : this.updatedAt
+        id            : this._id,
+        nombre        : this.nombre,
+        fase          : this.fase,
+        tipoEvolucion : this.tipoEvolucion,
+        diasVividos   : this.diasVividos,
+        diasMaximos   : this.diasMaximos,
+        estadisticas  : this.estadisticas,
+        bosque        : this.bosque,
+        estado        : this.estado,
+        imagenActual  : this.imagenActual,
+        activa        : this.activa,
+        createdAt     : this.createdAt,
+        updatedAt     : this.updatedAt
     }
 }
 
@@ -120,9 +132,8 @@ MascotaSchema.methods.getDatosCompletos = function() {
 MascotaSchema.methods.puedeEjecutar = function(accion, cooldownMinutos) {
     const ultima = this.ultimasAcciones[accion]
     if (!ultima) return true
-
-    const ahora       = new Date()
-    const diferencia  = (ahora - ultima) / (1000 * 60)  // en minutos
+    const ahora      = new Date()
+    const diferencia = (ahora - ultima) / (1000 * 60)
     return diferencia >= cooldownMinutos
 }
 

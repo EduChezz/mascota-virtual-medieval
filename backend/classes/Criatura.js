@@ -4,13 +4,15 @@
 // Implementa: State, Observer, Strategy
 //
 // FASES DE VIDA:
-// huevo → cria → joven → guardian → retorno
+// huevo → base → evolucionada → retorno
 //
-// VARIABLES DE ESTADO:
-// estadisticas → determina el estado activo
-// fase         → fase de vida actual
-// diasVividos  → contador de días
-// diasMaximos  → 15 días de ciclo completo
+// TIPOS DE EVOLUCIÓN (día 6):
+// natura  → vínculo > 70
+// umbra   → energía > 70
+// ignis   → espíritu > 70
+// aqua    → vitalidad > 70
+// aether  → todo equilibrado > 60
+// umbris  → negligencia general
 // ============================================
 
 import { Estadisticas }  from './Estadisticas.js'
@@ -18,19 +20,16 @@ import { evaluarEstado } from './EstadosCriatura.js'
 
 export class Criatura {
 
-    // ── Constructor ───────────────────────────
-
     constructor(nombre) {
-        this.nombre       = nombre
-        this.fase         = 'huevo'
-        this.diasVividos  = 0
-        this.diasMaximos  = 15
-        this.estadisticas = new Estadisticas()
-        this.estadoActual = null
-        this.observadores = []          // patrón Observer
-        this.createdAt    = new Date()
-
-        // evaluar estado inicial
+        this.nombre          = nombre
+        this.fase            = 'huevo'
+        this.tipoEvolucion   = null      // se determina en día 6
+        this.diasVividos     = 0
+        this.diasMaximos     = 15
+        this.estadisticas    = new Estadisticas()
+        this.estadoActual    = null
+        this.observadores    = []
+        this.createdAt       = new Date()
         this._actualizarEstado()
     }
 
@@ -51,7 +50,7 @@ export class Criatura {
     }
 
     // ════════════════════════════════════════
-    // PATRÓN STATE — actualización automática
+    // PATRÓN STATE
     // ════════════════════════════════════════
 
     _actualizarEstado() {
@@ -63,7 +62,6 @@ export class Criatura {
         )
         const estadoNuevo = this.estadoActual.getNombre()
 
-        // notificar solo si el estado cambió
         if (estadoAnterior !== estadoNuevo) {
             this._notificarObservadores('cambioEstado', {
                 estadoAnterior,
@@ -73,12 +71,10 @@ export class Criatura {
     }
 
     // ════════════════════════════════════════
-    // PATRÓN STRATEGY — ejecutar acciones
+    // PATRÓN STRATEGY
     // ════════════════════════════════════════
 
     ejecutarAccion(accion) {
-
-        // verificar si la acción está disponible en este estado
         const disponibles = this.estadoActual.getAccionesDisponibles()
         if (!disponibles.includes(accion.getNombre())) {
             return {
@@ -87,15 +83,10 @@ export class Criatura {
             }
         }
 
-        // ejecutar la estrategia
         const resultado = accion.ejecutar(this.estadisticas)
-
-        // actualizar estado tras la acción
         this._actualizarEstado()
-
-        // notificar observadores
         this._notificarObservadores('accionEjecutada', {
-            accion  : accion.getNombre(),
+            accion   : accion.getNombre(),
             resultado
         })
 
@@ -103,36 +94,75 @@ export class Criatura {
     }
 
     // ════════════════════════════════════════
-    // EVOLUCIÓN DE FASE
+    // SISTEMA DE EVOLUCIÓN
     // ════════════════════════════════════════
 
-    _evaluarEvolucion() {
-        const fases = ['huevo', 'cria', 'joven', 'guardian']
-        const limites = {
-            huevo   : 1,    // evoluciona al día 1
-            cria    : 4,    // evoluciona al día 4
-            joven   : 9,    // evoluciona al día 9
-            guardian: 15    // retorno al día 15
+    _determinarEvolucion() {
+        const s = this.estadisticas.toObject()
+
+        // Aether → todo equilibrado > 60
+        if (s.vitalidad > 60 && s.espiritu > 60 &&
+            s.energia > 60   && s.vinculo > 60 && s.hambre < 40) {
+            return 'aether'
         }
 
-        const faseActual = this.fase
-        const limite     = limites[faseActual]
+        // encontrar la estadística dominante
+        const puntuaciones = {
+            natura  : s.vinculo,
+            umbra   : s.energia,
+            ignis   : s.espiritu,
+            aqua    : s.vitalidad
+        }
 
-        if (limite && this.diasVividos >= limite) {
-            const siguienteFase = fases[fases.indexOf(faseActual) + 1]
-            if (siguienteFase) {
-                this.fase = siguienteFase
-                this._notificarObservadores('evolucion', {
-                    faseAnterior : faseActual,
-                    faseNueva    : siguienteFase
-                })
-            }
+        const dominante = Object.entries(puntuaciones)
+            .sort((a, b) => b[1] - a[1])[0]
+
+        // si la dominante supera 70 → evoluciona a ese tipo
+        if (dominante[1] > 70) {
+            return dominante[0]
+        }
+
+        // si ninguna supera 70 → umbris (negligencia)
+        return 'umbris'
+    }
+
+    _evaluarEvolucion() {
+        // día 1 → huevo a base
+        if (this.diasVividos === 1 && this.fase === 'huevo') {
+            this.fase = 'base'
+            this._notificarObservadores('evolucion', {
+                faseAnterior : 'huevo',
+                faseNueva    : 'base',
+                tipo         : null
+            })
+            return
+        }
+
+        // día 6 → base a forma evolucionada
+        if (this.diasVividos === 6 && this.fase === 'base') {
+            this.tipoEvolucion = this._determinarEvolucion()
+            this.fase          = 'evolucionada'
+            this._notificarObservadores('evolucion', {
+                faseAnterior : 'base',
+                faseNueva    : 'evolucionada',
+                tipo         : this.tipoEvolucion
+            })
+            return
+        }
+
+        // día 15 → retorno
+        if (this.diasVividos >= this.diasMaximos) {
+            this.fase = 'retorno'
+            this._notificarObservadores('evolucion', {
+                faseAnterior : 'evolucionada',
+                faseNueva    : 'retorno',
+                tipo         : this.tipoEvolucion
+            })
         }
     }
 
     // ════════════════════════════════════════
-    // TICK DIARIO — degradación natural
-    // Se llama automáticamente cada cierto tiempo
+    // TICK DIARIO
     // ════════════════════════════════════════
 
     tickDiario() {
@@ -146,41 +176,67 @@ export class Criatura {
     }
 
     // ════════════════════════════════════════
-    // GETTERS PRINCIPALES
+    // GETTERS
     // ════════════════════════════════════════
 
-    getNombre()       { return this.nombre       }
-    getFase()         { return this.fase         }
-    getDiasVividos()  { return this.diasVividos  }
-    getDiasMaximos()  { return this.diasMaximos  }
-    getEstado()       { return this.estadoActual }
-    getEstadisticas() { return this.estadisticas }
+    getNombre()        { return this.nombre        }
+    getFase()          { return this.fase          }
+    getTipoEvolucion() { return this.tipoEvolucion }
+    getDiasVividos()   { return this.diasVividos   }
+    getDiasMaximos()   { return this.diasMaximos   }
+    getEstado()        { return this.estadoActual  }
+    getEstadisticas()  { return this.estadisticas  }
+
+    // imagen correcta según fase + tipo + estado
+    getImagenActual() {
+        const estado = this.estadoActual?.getNombre() || 'paz'
+        const tipo   = this.tipoEvolucion || 'base'
+
+        if (this.fase === 'huevo') {
+            return '/assets/images/criatura/huevo.png'
+        }
+
+        if (this.fase === 'base') {
+            return `/assets/images/criatura/sylvae_base_${estado}.png`
+        }
+
+        if (this.fase === 'evolucionada') {
+            return `/assets/images/criatura/sylvae_${tipo}_${estado}.png`
+        }
+
+        if (this.fase === 'retorno') {
+            return `/assets/images/criatura/sylvae_retorno_${estado}.png`
+        }
+
+        return '/assets/images/criatura/huevo.png'
+    }
 
     // ════════════════════════════════════════
-    // SERIALIZACIÓN para MongoDB
+    // SERIALIZACIÓN
     // ════════════════════════════════════════
 
     toObject() {
         return {
-            nombre       : this.nombre,
-            fase         : this.fase,
-            diasVividos  : this.diasVividos,
-            diasMaximos  : this.diasMaximos,
-            estadisticas : this.estadisticas.toObject(),
-            estado       : this.estadoActual.toObject(),
-            createdAt    : this.createdAt
+            nombre         : this.nombre,
+            fase           : this.fase,
+            tipoEvolucion  : this.tipoEvolucion,
+            diasVividos    : this.diasVividos,
+            diasMaximos    : this.diasMaximos,
+            estadisticas   : this.estadisticas.toObject(),
+            estado         : this.estadoActual.toObject(),
+            imagenActual   : this.getImagenActual(),
+            createdAt      : this.createdAt
         }
     }
 
-    // ── Cargar desde MongoDB ──────────────────
-
     static fromObject(obj) {
         const c = new Criatura(obj.nombre)
-        c.fase        = obj.fase
-        c.diasVividos = obj.diasVividos
-        c.diasMaximos = obj.diasMaximos
-        c.estadisticas = Estadisticas.fromObject(obj.estadisticas)
-        c.createdAt   = obj.createdAt
+        c.fase           = obj.fase
+        c.tipoEvolucion  = obj.tipoEvolucion || null
+        c.diasVividos    = obj.diasVividos
+        c.diasMaximos    = obj.diasMaximos
+        c.estadisticas   = Estadisticas.fromObject(obj.estadisticas)
+        c.createdAt      = obj.createdAt
         c._actualizarEstado()
         return c
     }

@@ -1,17 +1,8 @@
 // ============================================
 // APP.JS — Lógica del Frontend
-// El Juramento del Bosque Vivo
-//
-// Responsabilidades:
-// → Manejar navegación entre pantallas
-// → Comunicarse con la API del backend
-// → Actualizar la UI según el estado
-// → Manejar acciones del usuario
+// Actualizado con sistema de evoluciones Sylvae
+// + Imágenes reales + Animaciones de partículas
 // ============================================
-
-// ════════════════════════════════════════════
-// CONFIGURACIÓN
-// ════════════════════════════════════════════
 
 const API = 'https://mascota-virtual-medieval.onrender.com/api/mascota'
 
@@ -20,11 +11,12 @@ const API = 'https://mascota-virtual-medieval.onrender.com/api/mascota'
 // ════════════════════════════════════════════
 
 const estado = {
-    pantalla     : 'intro',
-    slideActual  : 0,
-    totalSlides  : 5,
-    datosCriatura: null,
-    tickInterval : null
+    pantalla      : 'intro',
+    slideActual   : 0,
+    totalSlides   : 5,
+    datosCriatura : null,
+    tickInterval  : null,
+    particulasInterval : null
 }
 
 // ════════════════════════════════════════════
@@ -32,43 +24,34 @@ const estado = {
 // ════════════════════════════════════════════
 
 const dom = {
-    // pantallas
     pantallas : {
         intro  : document.getElementById('pantalla-intro'),
         crear  : document.getElementById('pantalla-crear'),
         juego  : document.getElementById('pantalla-juego'),
         fin    : document.getElementById('pantalla-fin')
     },
-
-    // intro
-    slides       : document.querySelectorAll('.intro-slide'),
-    btnAnterior  : document.getElementById('btn-anterior'),
-    btnSiguiente : document.getElementById('btn-siguiente'),
-    btnComenzar  : document.getElementById('btn-comenzar'),
-    introPuntos  : document.getElementById('intro-puntos'),
-
-    // crear
-    inputNombre  : document.getElementById('input-nombre'),
-    btnCrear     : document.getElementById('btn-crear'),
-    crearError   : document.getElementById('crear-error'),
-
-    // juego
-    bosqueFondo  : document.getElementById('bosque-fondo'),
-    bosqueOverlay: document.getElementById('bosque-overlay'),
-    barraBosque  : document.getElementById('barra-bosque'),
-    valorBosque  : document.getElementById('valor-bosque'),
+    slides        : document.querySelectorAll('.intro-slide'),
+    btnAnterior   : document.getElementById('btn-anterior'),
+    btnSiguiente  : document.getElementById('btn-siguiente'),
+    btnComenzar   : document.getElementById('btn-comenzar'),
+    introPuntos   : document.getElementById('intro-puntos'),
+    inputNombre   : document.getElementById('input-nombre'),
+    btnCrear      : document.getElementById('btn-crear'),
+    crearError    : document.getElementById('crear-error'),
+    bosqueFondo   : document.getElementById('bosque-fondo'),
+    bosqueOverlay : document.getElementById('bosque-overlay'),
+    barraBosque   : document.getElementById('barra-bosque'),
+    valorBosque   : document.getElementById('valor-bosque'),
     nombreCriatura: document.getElementById('nombre-criatura'),
-    faseCriatura : document.getElementById('fase-criatura'),
-    diasVividos  : document.getElementById('dias-vividos'),
+    faseCriatura  : document.getElementById('fase-criatura'),
+    diasVividos   : document.getElementById('dias-vividos'),
     criaturaSprite: document.getElementById('criatura-sprite'),
-    criaturaAura : document.getElementById('criatura-aura'),
-    estadoMensaje: document.getElementById('estado-mensaje'),
-    accionesPanel: document.getElementById('acciones-panel'),
-    botonesAccion: document.querySelectorAll('.btn-accion'),
-    notificacion : document.getElementById('notificacion'),
-    musicaFondo  : document.getElementById('musica-fondo'),
-
-    // stats
+    criaturaAura  : document.getElementById('criatura-aura'),
+    estadoMensaje : document.getElementById('estado-mensaje'),
+    accionesPanel : document.getElementById('acciones-panel'),
+    botonesAccion : document.querySelectorAll('.btn-accion'),
+    notificacion  : document.getElementById('notificacion'),
+    musicaFondo   : document.getElementById('musica-fondo'),
     stats : {
         vitalidad : { barra: document.getElementById('barra-vitalidad'), val: document.getElementById('val-vitalidad') },
         hambre    : { barra: document.getElementById('barra-hambre'),    val: document.getElementById('val-hambre')    },
@@ -76,8 +59,6 @@ const dom = {
         energia   : { barra: document.getElementById('barra-energia'),   val: document.getElementById('val-energia')   },
         vinculo   : { barra: document.getElementById('barra-vinculo'),   val: document.getElementById('val-vinculo')   }
     },
-
-    // fin
     finIcono    : document.getElementById('fin-icono'),
     finTitulo   : document.getElementById('fin-titulo'),
     finMensaje  : document.getElementById('fin-mensaje'),
@@ -94,24 +75,20 @@ function mostrarPantalla(nombre) {
         p.style.display = 'none'
         p.style.opacity = '0'
     })
-
     const pantalla = dom.pantallas[nombre]
     pantalla.style.display = 'flex'
-
     setTimeout(() => {
         pantalla.style.opacity = '1'
         pantalla.classList.add('activa')
     }, 50)
-
     estado.pantalla = nombre
 }
 
 // ════════════════════════════════════════════
-// INTRO — Navegación de slides
+// INTRO
 // ════════════════════════════════════════════
 
 function iniciarIntro() {
-    // crear puntos de navegación
     dom.introPuntos.innerHTML = ''
     for (let i = 0; i < estado.totalSlides; i++) {
         const punto = document.createElement('div')
@@ -120,24 +97,14 @@ function iniciarIntro() {
         punto.addEventListener('click', () => irASlide(i))
         dom.introPuntos.appendChild(punto)
     }
-
     mostrarSlide(0)
 }
 
 function mostrarSlide(indice) {
-    dom.slides.forEach((s, i) => {
-        s.classList.toggle('activo', i === indice)
-    })
-
-    document.querySelectorAll('.punto').forEach((p, i) => {
-        p.classList.toggle('activo', i === indice)
-    })
-
-    // mostrar/ocultar botón comenzar
-    const esUltimo = indice === estado.totalSlides - 1
-    dom.btnComenzar.style.display = esUltimo ? 'inline-block' : 'none'
+    dom.slides.forEach((s, i) => s.classList.toggle('activo', i === indice))
+    document.querySelectorAll('.punto').forEach((p, i) => p.classList.toggle('activo', i === indice))
+    dom.btnComenzar.style.display = indice === estado.totalSlides - 1 ? 'inline-block' : 'none'
     dom.btnAnterior.style.display = indice === 0 ? 'none' : 'inline-block'
-
     estado.slideActual = indice
 }
 
@@ -146,18 +113,9 @@ function irASlide(indice) {
     mostrarSlide(indice)
 }
 
-// eventos intro
-dom.btnSiguiente.addEventListener('click', () => {
-    irASlide(estado.slideActual + 1)
-})
-
-dom.btnAnterior.addEventListener('click', () => {
-    irASlide(estado.slideActual - 1)
-})
-
-dom.btnComenzar.addEventListener('click', () => {
-    mostrarPantalla('crear')
-})
+dom.btnSiguiente.addEventListener('click', () => irASlide(estado.slideActual + 1))
+dom.btnAnterior.addEventListener('click',  () => irASlide(estado.slideActual - 1))
+dom.btnComenzar.addEventListener('click',  () => mostrarPantalla('crear'))
 
 // ════════════════════════════════════════════
 // CREAR CRIATURA
@@ -165,7 +123,6 @@ dom.btnComenzar.addEventListener('click', () => {
 
 dom.btnCrear.addEventListener('click', async () => {
     const nombre = dom.inputNombre.value.trim()
-
     if (nombre.length < 2) {
         dom.crearError.textContent = 'El nombre debe tener al menos 2 caracteres'
         dom.inputNombre.classList.add('shake')
@@ -183,7 +140,6 @@ dom.btnCrear.addEventListener('click', async () => {
             headers : { 'Content-Type': 'application/json' },
             body    : JSON.stringify({ nombre })
         })
-
         const data = await res.json()
 
         if (data.exito) {
@@ -191,18 +147,17 @@ dom.btnCrear.addEventListener('click', async () => {
             mostrarPantalla('juego')
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
+            iniciarParticulas(data.datos)
             mostrarNotificacion(`¡${nombre} ha despertado del huevo espiritual!`)
         } else {
-            // si ya existe una criatura activa, cargar el juego
             if (data.mensaje.includes('Ya existe')) {
                 await cargarEstado()
             } else {
                 dom.crearError.textContent = data.mensaje
             }
         }
-
     } catch (error) {
-        dom.crearError.textContent = 'Error al conectar con el bosque. Intenta de nuevo.'
+        dom.crearError.textContent = 'Error al conectar con el bosque.'
         console.error(error)
     } finally {
         dom.btnCrear.disabled    = false
@@ -210,27 +165,25 @@ dom.btnCrear.addEventListener('click', async () => {
     }
 })
 
-// enter en el input
 dom.inputNombre.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') dom.btnCrear.click()
 })
 
 // ════════════════════════════════════════════
-// CARGAR ESTADO DESDE EL BACKEND
+// CARGAR ESTADO
 // ════════════════════════════════════════════
 
 async function cargarEstado() {
     try {
         const res  = await fetch(`${API}/estado`)
         const data = await res.json()
-
         if (data.exito) {
             estado.datosCriatura = data.datos
             mostrarPantalla('juego')
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
+            iniciarParticulas(data.datos)
         }
-
     } catch (error) {
         console.error('Error al cargar estado:', error)
     }
@@ -243,18 +196,19 @@ async function cargarEstado() {
 function actualizarJuego(datos) {
     if (!datos) return
 
-    const { nombre, fase, estado: est, estadisticas, bosque, diasVividos } = datos
+    const { nombre, fase, tipoEvolucion, estado: est,
+            estadisticas, bosque, diasVividos, imagenActual } = datos
 
     // header
     dom.nombreCriatura.textContent = nombre
-    dom.faseCriatura.textContent   = fase
+    dom.faseCriatura.textContent   = obtenerLabelFase(fase, tipoEvolucion)
     dom.diasVividos.textContent    = diasVividos
 
     // bosque
     const saludBosque = bosque?.salud ?? 100
-    dom.barraBosque.style.width  = `${saludBosque}%`
-    dom.valorBosque.textContent  = saludBosque
-    actualizarFondoBosque(saludBosque, bosque?.color)
+    dom.barraBosque.style.width = `${saludBosque}%`
+    dom.valorBosque.textContent = saludBosque
+    actualizarFondoBosque(saludBosque)
 
     // estadísticas
     if (estadisticas) {
@@ -265,119 +219,290 @@ function actualizarJuego(datos) {
         actualizarStat('vinculo',   estadisticas.vinculo)
     }
 
-    // criatura — sprite según fase y estado
-    actualizarSpriteCriatura(fase, est?.nombre)
+    // imagen real de la criatura
+    actualizarImagenCriatura(imagenActual, fase, tipoEvolucion)
 
     // mensaje del estado
-    if (est?.mensaje) {
-        dom.estadoMensaje.textContent = est.mensaje
-    }
+    if (est?.mensaje) dom.estadoMensaje.textContent = est.mensaje
 
-    // aura según estado
-    actualizarAura(est?.nombre)
+    // aura
+    actualizarAura(est?.nombre, tipoEvolucion)
 
-    // botones de acción disponibles
-    if (est?.acciones) {
-        actualizarBotonesAccion(est.acciones)
-    }
+    // botones
+    if (est?.acciones) actualizarBotonesAccion(est.acciones)
 
-    // verificar fin de juego
+    // partículas según bosque
+    actualizarParticulas(saludBosque, tipoEvolucion)
+
+    // fin de juego
     if (est?.nombre === 'retorno' || est?.nombre === 'perdido') {
         setTimeout(() => mostrarPantallaFin(est.nombre, nombre), 2000)
     }
 }
 
+function obtenerLabelFase(fase, tipo) {
+    const labels = {
+        huevo        : '🥚 Huevo Espiritual',
+        base         : '🐾 Sylvae',
+        evolucionada : {
+            natura  : '🌿 Sylvae Natura',
+            umbra   : '🌙 Sylvae Umbra',
+            ignis   : '🔥 Sylvae Ignis',
+            aqua    : '💧 Sylvae Aqua',
+            aether  : '✨ Sylvae Aether',
+            umbris  : '💔 Sylvae Umbris'
+        },
+        retorno : '🌿 Retorno al Bosque',
+        perdido : '💔 Perdido'
+    }
+
+    if (fase === 'evolucionada' && tipo) {
+        return labels.evolucionada[tipo] || '✨ Sylvae'
+    }
+    return labels[fase] || fase
+}
+
 function actualizarStat(nombre, valor) {
     const stat = dom.stats[nombre]
     if (!stat) return
-    // hambre: la barra se invierte (más hambre = más llena la barra)
-    const porcentaje = nombre === 'hambre' ? valor : valor
-    stat.barra.style.width  = `${porcentaje}%`
-    stat.val.textContent    = Math.round(valor)
+    stat.barra.style.width = `${valor}%`
+    stat.val.textContent   = Math.round(valor)
 }
 
-function actualizarFondoBosque(salud, color) {
-    let gradiente = ''
-    if (salud >= 75) {
-        gradiente = 'radial-gradient(ellipse at center bottom, #0d1f0d 0%, #050a05 60%, #000000 100%)'
-    } else if (salud >= 50) {
-        gradiente = 'radial-gradient(ellipse at center bottom, #1a1f0d 0%, #080a05 60%, #000000 100%)'
-    } else if (salud >= 25) {
-        gradiente = 'radial-gradient(ellipse at center bottom, #1f150d 0%, #0a0805 60%, #000000 100%)'
-    } else {
-        gradiente = 'radial-gradient(ellipse at center bottom, #1f0d0d 0%, #0a0505 60%, #000000 100%)'
+function actualizarFondoBosque(salud) {
+    const fondos = {
+        100 : "url('/assets/images/bosque/bosque_100.png')",
+        75  : "url('/assets/images/bosque/bosque_75.png')",
+        50  : "url('/assets/images/bosque/bosque_50.png')",
+        0   : "url('/assets/images/bosque/bosque_muerto.png')"
     }
-    dom.bosqueFondo.style.background = gradiente
+
+    let fondo = fondos[0]
+    if (salud >= 75) fondo = fondos[100]
+    else if (salud >= 50) fondo = fondos[75]
+    else if (salud >= 25) fondo = fondos[50]
+
+    dom.bosqueFondo.style.backgroundImage    = fondo
+    dom.bosqueFondo.style.backgroundSize     = 'cover'
+    dom.bosqueFondo.style.backgroundPosition = 'center'
+    dom.bosqueFondo.style.transition         = 'background-image 2s ease'
 }
 
-function actualizarSpriteCriatura(fase, estadoNombre) {
-    const sprites = {
-        huevo   : '🥚',
-        cria    : {
-            paz         : '🌱',
-            alegre      : '✨',
-            hambriento  : '😿',
-            somnoliento : '😴',
-            triste      : '🌧️',
-            peligro     : '⚠️',
-            default     : '🌱'
-        },
-        joven   : {
-            paz         : '🦋',
-            alegre      : '🌟',
-            hambriento  : '🍂',
-            somnoliento : '🌙',
-            triste      : '🌫️',
-            peligro     : '🔥',
-            default     : '🦋'
-        },
-        guardian: {
-            paz         : '🐉',
-            alegre      : '💫',
-            default     : '🐉'
-        },
-        retorno : '🌿',
-        perdido : '💔'
+function actualizarImagenCriatura(imagenActual, fase, tipo) {
+    // limpiar sprite anterior
+    dom.criaturaSprite.innerHTML = ''
+
+    const img = document.createElement('img')
+    img.src   = imagenActual || '/assets/images/criatura/huevo.png'
+    img.alt   = 'Sylvae'
+    img.style.cssText = `
+        width: 180px;
+        height: 180px;
+        object-fit: contain;
+        filter: drop-shadow(0 0 20px ${obtenerColorTipo(tipo)});
+        animation: flotar 3s ease-in-out infinite;
+    `
+
+    // fallback si la imagen no carga
+    img.onerror = () => {
+        dom.criaturaSprite.innerHTML = fase === 'huevo' ? '🥚' : '🐾'
+        dom.criaturaSprite.style.fontSize = '7rem'
     }
 
-    let sprite = '🥚'
-
-    if (fase === 'huevo') {
-        sprite = sprites.huevo
-    } else if (sprites[fase]) {
-        const faseSprits = sprites[fase]
-        sprite = faseSprits[estadoNombre] || faseSprits.default || '🌱'
-    } else if (fase === 'retorno') {
-        sprite = sprites.retorno
-    } else if (fase === 'perdido') {
-        sprite = sprites.perdido
-    }
-
-    dom.criaturaSprite.textContent = sprite
+    dom.criaturaSprite.appendChild(img)
 }
 
-function actualizarAura(estadoNombre) {
+function obtenerColorTipo(tipo) {
     const colores = {
-        paz         : 'rgba(45, 110, 78, 0.3)',
-        alegre      : 'rgba(127, 255, 127, 0.4)',
-        hambriento  : 'rgba(200, 169, 110, 0.3)',
-        somnoliento : 'rgba(107, 159, 255, 0.3)',
-        triste      : 'rgba(150, 100, 200, 0.3)',
-        peligro     : 'rgba(139, 32, 32, 0.5)',
-        retorno     : 'rgba(255, 215, 100, 0.5)',
-        perdido     : 'rgba(0, 0, 0, 0.8)'
+        natura  : 'rgba(45, 200, 78, 0.6)',
+        umbra   : 'rgba(107, 78, 200, 0.6)',
+        ignis   : 'rgba(255, 140, 0, 0.6)',
+        aqua    : 'rgba(0, 180, 220, 0.6)',
+        aether  : 'rgba(255, 215, 100, 0.6)',
+        umbris  : 'rgba(80, 0, 0, 0.6)',
+        retorno : 'rgba(255, 215, 100, 0.8)'
     }
+    return colores[tipo] || 'rgba(127, 255, 127, 0.4)'
+}
 
-    const color = colores[estadoNombre] || colores.paz
+function actualizarAura(estadoNombre, tipo) {
+    const color = obtenerColorTipo(tipo)
     dom.criaturaAura.style.background =
         `radial-gradient(circle, ${color} 0%, transparent 70%)`
 }
 
 function actualizarBotonesAccion(accionesDisponibles) {
     dom.botonesAccion.forEach(btn => {
-        const accion = btn.dataset.accion
-        btn.disabled = !accionesDisponibles.includes(accion)
+        btn.disabled = !accionesDisponibles.includes(btn.dataset.accion)
     })
+}
+
+// ════════════════════════════════════════════
+// SISTEMA DE PARTÍCULAS / ANIMACIONES
+// ════════════════════════════════════════════
+
+let contenedorParticulas = null
+
+function iniciarParticulas(datos) {
+    // crear contenedor de partículas
+    if (!contenedorParticulas) {
+        contenedorParticulas = document.createElement('div')
+        contenedorParticulas.id = 'particulas-contenedor'
+        contenedorParticulas.style.cssText = `
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5;
+            overflow: hidden;
+        `
+        document.getElementById('pantalla-juego').appendChild(contenedorParticulas)
+    }
+
+    actualizarParticulas(datos?.bosque?.salud ?? 100, datos?.tipoEvolucion)
+}
+
+function actualizarParticulas(saludBosque, tipo) {
+    if (!contenedorParticulas) return
+    contenedorParticulas.innerHTML = ''
+
+    if (estado.particulasInterval) {
+        clearInterval(estado.particulasInterval)
+    }
+
+    // según salud del bosque
+    if (saludBosque >= 75) {
+        // bosque sano → mariposas y luciérnagas
+        estado.particulasInterval = setInterval(() => {
+            crearMariposa()
+            if (Math.random() > 0.5) crearLuciernaga()
+        }, 800)
+    } else if (saludBosque >= 50) {
+        // bosque estable → hojas cayendo
+        estado.particulasInterval = setInterval(() => {
+            crearHoja()
+        }, 600)
+    } else if (saludBosque >= 25) {
+        // bosque enfermo → hojas secas
+        estado.particulasInterval = setInterval(() => {
+            crearHojaSeca()
+            if (Math.random() > 0.7) crearHoja()
+        }, 400)
+    } else {
+        // bosque muerto → cenizas
+        estado.particulasInterval = setInterval(() => {
+            crearCeniza()
+        }, 300)
+    }
+}
+
+function crearMariposa() {
+    const mariposa = document.createElement('div')
+    const emojis   = ['🦋', '🦋', '🌸', '🦋']
+    const emoji    = emojis[Math.floor(Math.random() * emojis.length)]
+    const startX   = Math.random() * window.innerWidth
+    const duration = 6000 + Math.random() * 4000
+
+    mariposa.textContent  = emoji
+    mariposa.style.cssText = `
+        position: absolute;
+        font-size: ${0.8 + Math.random() * 0.8}rem;
+        left: ${startX}px;
+        bottom: -30px;
+        opacity: 0;
+        animation: volarMariposa ${duration}ms ease-in-out forwards;
+        pointer-events: none;
+    `
+
+    contenedorParticulas.appendChild(mariposa)
+    setTimeout(() => mariposa.remove(), duration)
+}
+
+function crearLuciernaga() {
+    const luciernaga = document.createElement('div')
+    const x = Math.random() * window.innerWidth
+    const y = Math.random() * window.innerHeight
+    const duration = 3000 + Math.random() * 3000
+
+    luciernaga.style.cssText = `
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: radial-gradient(circle, #7fff7f, transparent);
+        border-radius: 50%;
+        left: ${x}px;
+        top: ${y}px;
+        animation: pulsarLuciernaga ${duration}ms ease-in-out forwards;
+        pointer-events: none;
+        box-shadow: 0 0 8px #7fff7f;
+    `
+
+    contenedorParticulas.appendChild(luciernaga)
+    setTimeout(() => luciernaga.remove(), duration)
+}
+
+function crearHoja() {
+    const hoja    = document.createElement('div')
+    const emojis  = ['🍃', '🌿', '🍀']
+    const emoji   = emojis[Math.floor(Math.random() * emojis.length)]
+    const startX  = Math.random() * window.innerWidth
+    const duration = 4000 + Math.random() * 3000
+
+    hoja.textContent  = emoji
+    hoja.style.cssText = `
+        position: absolute;
+        font-size: ${0.6 + Math.random() * 0.6}rem;
+        left: ${startX}px;
+        top: -20px;
+        opacity: 0.7;
+        animation: caerHoja ${duration}ms ease-in forwards;
+        pointer-events: none;
+    `
+
+    contenedorParticulas.appendChild(hoja)
+    setTimeout(() => hoja.remove(), duration)
+}
+
+function crearHojaSeca() {
+    const hoja    = document.createElement('div')
+    const emojis  = ['🍂', '🍁', '🍂']
+    const emoji   = emojis[Math.floor(Math.random() * emojis.length)]
+    const startX  = Math.random() * window.innerWidth
+    const duration = 3000 + Math.random() * 2000
+
+    hoja.textContent  = emoji
+    hoja.style.cssText = `
+        position: absolute;
+        font-size: ${0.6 + Math.random() * 0.8}rem;
+        left: ${startX}px;
+        top: -20px;
+        opacity: 0.6;
+        animation: caerHoja ${duration}ms ease-in forwards;
+        pointer-events: none;
+    `
+
+    contenedorParticulas.appendChild(hoja)
+    setTimeout(() => hoja.remove(), duration)
+}
+
+function crearCeniza() {
+    const ceniza  = document.createElement('div')
+    const startX  = Math.random() * window.innerWidth
+    const duration = 4000 + Math.random() * 3000
+
+    ceniza.style.cssText = `
+        position: absolute;
+        width: ${3 + Math.random() * 4}px;
+        height: ${3 + Math.random() * 4}px;
+        background: rgba(150, 100, 100, 0.6);
+        border-radius: 50%;
+        left: ${startX}px;
+        top: -10px;
+        animation: caerHoja ${duration}ms ease-in forwards;
+        pointer-events: none;
+    `
+
+    contenedorParticulas.appendChild(ceniza)
+    setTimeout(() => ceniza.remove(), duration)
 }
 
 // ════════════════════════════════════════════
@@ -386,21 +511,18 @@ function actualizarBotonesAccion(accionesDisponibles) {
 
 dom.botonesAccion.forEach(btn => {
     btn.addEventListener('click', async () => {
-        const nombreAccion = btn.dataset.accion
-        await ejecutarAccion(nombreAccion, btn)
+        await ejecutarAccion(btn.dataset.accion, btn)
     })
 })
 
 async function ejecutarAccion(nombreAccion, btn) {
     btn.disabled = true
-
     try {
         const res  = await fetch(`${API}/accion`, {
             method  : 'POST',
             headers : { 'Content-Type': 'application/json' },
             body    : JSON.stringify({ nombreAccion })
         })
-
         const data = await res.json()
 
         if (data.exito) {
@@ -410,7 +532,6 @@ async function ejecutarAccion(nombreAccion, btn) {
         } else {
             mostrarNotificacion(data.mensaje, true)
         }
-
     } catch (error) {
         mostrarNotificacion('Error al conectar con el bosque', true)
         console.error(error)
@@ -420,26 +541,20 @@ async function ejecutarAccion(nombreAccion, btn) {
 }
 
 // ════════════════════════════════════════════
-// TICK AUTOMÁTICO — degradación natural
+// TICK AUTOMÁTICO
 // ════════════════════════════════════════════
 
 function iniciarTickAutomatico() {
     if (estado.tickInterval) clearInterval(estado.tickInterval)
-
-    // tick cada 5 minutos (300000ms)
-    // para pruebas usamos 30 segundos (30000ms)
     estado.tickInterval = setInterval(async () => {
         try {
             const res  = await fetch(`${API}/tick`, { method: 'POST' })
             const data = await res.json()
-
-            if (data.exito) {
-                actualizarJuego(data.datos)
-            }
+            if (data.exito) actualizarJuego(data.datos)
         } catch (error) {
             console.error('Error en tick:', error)
         }
-    }, 30000)  // ← cambia a 300000 para producción
+    }, 30000)
 }
 
 // ════════════════════════════════════════════
@@ -452,7 +567,6 @@ function mostrarNotificacion(mensaje, esError = false) {
     dom.notificacion.textContent = mensaje
     dom.notificacion.classList.toggle('error', esError)
     dom.notificacion.classList.add('visible')
-
     if (notifTimeout) clearTimeout(notifTimeout)
     notifTimeout = setTimeout(() => {
         dom.notificacion.classList.remove('visible')
@@ -465,31 +579,25 @@ function mostrarNotificacion(mensaje, esError = false) {
 
 function mostrarPantallaFin(tipoFin, nombre) {
     if (estado.tickInterval) clearInterval(estado.tickInterval)
+    if (estado.particulasInterval) clearInterval(estado.particulasInterval)
 
     if (tipoFin === 'retorno') {
         dom.finIcono.textContent  = '✨'
         dom.finTitulo.textContent = 'El ciclo se completa'
-        dom.finMensaje.textContent =
-            `${nombre} ha completado su ciclo y regresa al bosque espiritual. Gracias por tu cuidado.`
+        dom.finMensaje.textContent = `${nombre} ha completado su ciclo y regresa al bosque espiritual.`
     } else {
         dom.finIcono.textContent  = '💔'
         dom.finTitulo.textContent = 'El bosque se ha oscurecido'
-        dom.finMensaje.textContent =
-            `${nombre} no pudo completar su ciclo. El bosque lo recuerda. ¿Lo intentas de nuevo?`
+        dom.finMensaje.textContent = `${nombre} no pudo completar su ciclo. El bosque lo recuerda.`
     }
-
     mostrarPantalla('fin')
 }
 
-// reiniciar juego
 dom.btnReiniciar.addEventListener('click', async () => {
-    try {
-        await fetch(`${API}/reiniciar`, { method: 'DELETE' })
-        Bosque_resetInstancia()
-    } catch (e) {}
-
+    try { await fetch(`${API}/reiniciar`, { method: 'DELETE' }) } catch(e) {}
     estado.datosCriatura = null
     dom.inputNombre.value = ''
+    if (contenedorParticulas) contenedorParticulas.innerHTML = ''
     mostrarPantalla('crear')
 })
 
@@ -501,23 +609,19 @@ async function inicializar() {
     iniciarIntro()
     mostrarPantalla('intro')
 
-    // verificar si ya existe una criatura activa
     try {
         const res  = await fetch(`${API}/estado`)
         const data = await res.json()
-
         if (data.exito) {
-            // ya hay una criatura — ir directo al juego
             estado.datosCriatura = data.datos
             mostrarPantalla('juego')
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
+            iniciarParticulas(data.datos)
         }
     } catch (error) {
-        // no hay criatura — mostrar intro normalmente
         console.log('No hay criatura activa, mostrando intro')
     }
 }
 
-// arrancar
 inicializar()
