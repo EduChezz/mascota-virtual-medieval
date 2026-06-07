@@ -59,17 +59,21 @@ async function guardarCriatura(doc, criatura, bosque, historial) {
 // ════════════════════════════════════════════
 
 function construirRespuesta(criatura, bosque, historial, doc) {
+    const datos = criatura.toObject()
     return {
         id            : doc._id,
         nombre        : criatura.getNombre(),
         fase          : criatura.getFase(),
         tipoEvolucion : criatura.getTipoEvolucion(),
         estado        : criatura.getEstado().toObject(),
-        estadisticas  : criatura.getEstadisticas().toObject(),
+        estadisticas  : datos.estadisticas,
         bosque        : bosque.toObject(),
         diasVividos   : criatura.getDiasVividos(),
         diasMaximos   : criatura.getDiasMaximos(),
-        imagenActual  : criatura.getImagenActual()
+        imagenActual  : criatura.getImagenActual(),
+        tendencia     : datos.tendencia,
+        urgencias     : datos.urgencias,
+        resumen       : datos.resumen
     }
 }
 

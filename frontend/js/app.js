@@ -901,26 +901,22 @@ async function cargarEstado() {
 function actualizarJuego(datos) {
     if (!datos) return
 
-    // detener todo audio anterior al entrar al juego
-    if (estado.pantalla === 'juego' && !GestorAudio.canales.musica) {
-        GestorAudio.detenerTodo()
-        GestorAudio.reproducirMusica(
-            GestorAudio.getMusicaBosque(datos.bosque?.salud ?? 100)
-        )
-    }
-
     const { nombre, fase, tipoEvolucion, estado: est,
-            estadisticas, bosque, diasVividos, imagenActual } = datos
+            estadisticas, bosque, diasVividos, imagenActual,
+            tendencia, urgencias } = datos
 
+    // header
     dom.nombreCriatura.textContent = nombre
     dom.faseCriatura.textContent   = obtenerLabelFase(fase, tipoEvolucion)
     dom.diasVividos.textContent    = diasVividos
 
+    // bosque
     const saludBosque = bosque?.salud ?? 100
     dom.barraBosque.style.width = `${saludBosque}%`
     dom.valorBosque.textContent = saludBosque
     actualizarFondoBosque(saludBosque)
 
+    // estadísticas
     if (estadisticas) {
         actualizarStat('vitalidad', estadisticas.vitalidad)
         actualizarStat('hambre',    estadisticas.hambre)
@@ -929,19 +925,28 @@ function actualizarJuego(datos) {
         actualizarStat('vinculo',   estadisticas.vinculo)
     }
 
+    // imagen
     actualizarImagenCriatura(imagenActual, fase, tipoEvolucion)
+
+    // mensaje
     if (est?.mensaje) dom.estadoMensaje.textContent = est.mensaje
+
+    // aura
     actualizarAura(est?.nombre, tipoEvolucion)
+
+    // botones
     if (est?.acciones) actualizarBotonesAccion(est.acciones)
+
+    // partículas
     actualizarParticulas(saludBosque, tipoEvolucion)
 
-    // sonido criatura cuando cambia estado
-    if (estado.estadoAnterior !== est?.nombre && estado.estadoAnterior !== null) {
-        GestorAudio.reproducirCriatura(GestorAudio.getSonidoCriatura(est?.nombre))
-    }
-    estado.estadoAnterior = est?.nombre
+    // ── BADGE DE TENDENCIA ────────────────────
+    actualizarBadgeTendencia(tendencia, diasVividos, fase)
 
-    // cambiar música según bosque
+    // ── SISTEMA DE URGENCIA ───────────────────
+    actualizarUrgencias(urgencias, nombre)
+
+    // ── MÚSICA SEGÚN BOSQUE ───────────────────
     const musicaCorrecta = GestorAudio.getMusicaBosque(saludBosque)
     if (GestorAudio.canales.musica &&
         !GestorAudio.canales.musica.src?.includes(
@@ -950,9 +955,15 @@ function actualizarJuego(datos) {
         GestorAudio.reproducirMusica(musicaCorrecta)
     }
 
+    // sonido criatura cuando cambia estado
+    if (estado.estadoAnterior !== est?.nombre && estado.estadoAnterior !== null) {
+        GestorAudio.reproducirCriatura(GestorAudio.getSonidoCriatura(est?.nombre))
+    }
+    estado.estadoAnterior = est?.nombre
+
     // fin de juego
     if (est?.nombre === 'retorno' || est?.nombre === 'perdido') {
-        setTimeout(() => mostrarPantallaFin(est.nombre, nombre), 2000)
+        setTimeout(() => mostrarPantallaFin(datos), 2000)
     }
 }
 
@@ -1033,6 +1044,74 @@ function actualizarBotonesAccion(accionesDisponibles) {
             }
         }
     })
+}
+
+// ════════════════════════════════════════════
+// BADGE DE TENDENCIA
+// ════════════════════════════════════════════
+
+function actualizarBadgeTendencia(tendencia, diasVividos, fase) {
+    const badge = document.getElementById('badge-tendencia')
+    if (!badge) return
+
+    // solo mostrar desde día 3 en adelante y en fase base o evolucionada
+    if (diasVividos < 3 || fase === 'huevo') {
+        badge.classList.add('oculto')
+        return
+    }
+
+    if (!tendencia) return
+
+    badge.classList.remove('oculto')
+    badge.className    = `badge-tendencia ${tendencia.tipo}`
+    badge.textContent  = `${tendencia.icono} Afinidad: ${tendencia.nombre}`
+}
+
+// ════════════════════════════════════════════
+// SISTEMA DE URGENCIAS
+// ════════════════════════════════════════════
+
+let urgenciaOverlay = null
+let urgenciaTimeout = null
+
+function actualizarUrgencias(urgencias, nombre) {
+    if (!urgencias || urgencias.length === 0) {
+        limpiarUrgencias()
+        return
+    }
+
+    // obtener urgencia más crítica
+    const critica = urgencias.find(u => u.nivel === 'critica')
+    const urgente = urgencias[0]
+    const actual  = critica || urgente
+
+    // overlay de borde
+    if (!urgenciaOverlay) {
+        urgenciaOverlay = document.createElement('div')
+        urgenciaOverlay.className = 'urgencia-overlay'
+        document.getElementById('pantalla-juego').appendChild(urgenciaOverlay)
+    }
+
+    urgenciaOverlay.className = `urgencia-overlay ${actual.nivel}`
+
+    // notificación cada 15 segundos
+    if (!urgenciaTimeout) {
+        mostrarNotificacion(`${actual.icono} ${actual.mensaje}`, true)
+        GestorAudio.reproducirCriatura(
+            GestorAudio.getSonidoCriatura(
+                actual.nivel === 'critica' ? 'peligro' : 'triste'
+            )
+        )
+        urgenciaTimeout = setTimeout(() => {
+            urgenciaTimeout = null
+        }, 15000)
+    }
+}
+
+function limpiarUrgencias() {
+    if (urgenciaOverlay) {
+        urgenciaOverlay.className = 'urgencia-overlay'
+    }
 }
 
 // ════════════════════════════════════════════
@@ -1214,21 +1293,68 @@ function mostrarNotificacion(mensaje, esError = false) {
 // PANTALLA FIN
 // ════════════════════════════════════════════
 
-function mostrarPantallaFin(tipoFin, nombre) {
+function mostrarPantallaFin(datos) {
     if (estado.tickInterval) clearInterval(estado.tickInterval)
     if (estado.particulasInterval) clearInterval(estado.particulasInterval)
     CooldownManager.limpiarTodos()
-    GestorAudio.reproducirEvento('/assets/sounds/eventos/retorno.mp3', 5000)
+    GestorAudio.detenerTodo()
 
-    if (tipoFin === 'retorno') {
-        dom.finIcono.textContent   = '✨'
-        dom.finTitulo.textContent  = 'El ciclo se completa'
-        dom.finMensaje.textContent = `${nombre} ha completado su ciclo y regresa al bosque espiritual.`
-    } else {
-        dom.finIcono.textContent   = '💔'
-        dom.finTitulo.textContent  = 'El bosque se ha oscurecido'
-        dom.finMensaje.textContent = `${nombre} no pudo completar su ciclo. El bosque lo recuerda.`
+    const resumen = datos.resumen
+    const exitoso = datos.estado?.nombre === 'retorno'
+
+    // música de fin
+    setTimeout(() => {
+        GestorAudio.reproducirMusica(
+            exitoso
+                ? '/assets/sounds/eventos/retorno.mp3'
+                : '/assets/sounds/ambiente/bosque_enfermo.mp3'
+        )
+    }, 500)
+
+    // ── Llenar pantalla de resumen ─────────────
+
+    // icono y título
+    document.getElementById('fin-icono').textContent  = exitoso ? '✨' : '💔'
+    document.getElementById('fin-titulo').textContent = exitoso
+        ? 'El ciclo se completa'
+        : 'El bosque se ha oscurecido'
+
+    // imagen de la criatura
+    const imgFin = document.getElementById('fin-criatura-img')
+    if (imgFin) {
+        imgFin.src = datos.imagenActual || '/assets/images/criatura/huevo.png'
     }
+
+    // aura de la criatura final
+    const auraFin = document.getElementById('fin-criatura-aura')
+    if (auraFin) {
+        const color = obtenerColorTipo(datos.tipoEvolucion)
+        auraFin.style.background =
+            `radial-gradient(circle, ${color} 0%, transparent 70%)`
+    }
+
+    // stats
+    document.getElementById('fin-dias').textContent =
+        `${resumen?.diasVividos ?? 0}/${resumen?.diasMaximos ?? 15}`
+
+    document.getElementById('fin-bosque').textContent =
+        `${datos.bosque?.salud ?? 0}%`
+
+    if (resumen?.logroMaximo) {
+        document.getElementById('fin-logro-icono').textContent =
+            resumen.logroMaximo.icono
+        document.getElementById('fin-logro').textContent =
+            resumen.logroMaximo.nombre
+    }
+
+    // evolución
+    const labelEvolucion = obtenerLabelFase(datos.fase, datos.tipoEvolucion)
+    document.getElementById('fin-evolucion-valor').textContent = labelEvolucion
+
+    // mensaje
+    document.getElementById('fin-mensaje').textContent =
+        resumen?.mensaje || 'El bosque recuerda cada momento de cuidado.'
+
     mostrarPantalla('fin')
 }
 
@@ -1241,6 +1367,10 @@ dom.btnReiniciar.addEventListener('click', async () => {
     CooldownManager.limpiarTodos()
     GestorAudio.pausarMusica()
     mostrarPantalla('crear')
+})
+
+document.getElementById('btn-ver-historial')?.addEventListener('click', () => {
+    mostrarNotificacion('📊 Historial próximamente disponible')
 })
 
 // ════════════════════════════════════════════

@@ -929,3 +929,230 @@ body {
     50%  { transform: scale(1.5);  opacity: 0.5; }
     100% { transform: scale(3);    opacity: 0; }
 }
+
+/* ══════════════════════════════════════════════
+   BADGE DE TENDENCIA
+   ══════════════════════════════════════════════ */
+
+.badge-tendencia {
+    font-size     : 0.75rem;
+    padding       : 0.2rem 0.6rem;
+    border-radius : 20px;
+    background    : rgba(255, 255, 255, 0.08);
+    border        : 1px solid var(--color-borde);
+    color         : var(--color-texto-suave);
+    transition    : var(--transicion);
+    animation     : fadeIn 0.5s ease;
+}
+
+.badge-tendencia.natura  { border-color: #2d6e4e; color: #7fff7f; background: rgba(45,110,78,0.2);  }
+.badge-tendencia.umbra   { border-color: #4a2d8e; color: #b06bff; background: rgba(74,45,142,0.2);  }
+.badge-tendencia.ignis   { border-color: #8e4a1a; color: #ff9f4a; background: rgba(142,74,26,0.2);  }
+.badge-tendencia.aqua    { border-color: #1a4a8e; color: #4ab0ff; background: rgba(26,74,142,0.2);  }
+.badge-tendencia.aether  { border-color: #8e7a1a; color: #ffd700; background: rgba(142,122,26,0.2); }
+.badge-tendencia.umbris  { border-color: #8e1a1a; color: #ff4a4a; background: rgba(142,26,26,0.2);  }
+
+/* ══════════════════════════════════════════════
+   SISTEMA DE URGENCIA
+   ══════════════════════════════════════════════ */
+
+.urgencia-overlay {
+    position      : fixed;
+    inset         : 0;
+    pointer-events: none;
+    z-index       : 20;
+    border        : 3px solid transparent;
+    transition    : border-color 0.5s ease;
+}
+
+.urgencia-overlay.critica {
+    border-color : rgba(139, 32, 32, 0.8);
+    animation    : pulsarBorde 1s ease-in-out infinite;
+}
+
+.urgencia-overlay.alta {
+    border-color : rgba(200, 169, 110, 0.6);
+    animation    : pulsarBorde 2s ease-in-out infinite;
+}
+
+@keyframes pulsarBorde {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+}
+
+/* ══════════════════════════════════════════════
+   PANTALLA FIN — RESUMEN
+   ══════════════════════════════════════════════ */
+
+#pantalla-fin {
+    align-items     : center;
+    justify-content : center;
+    overflow-y      : auto;
+}
+
+.fin-fondo {
+    position            : fixed;
+    inset               : 0;
+    background-image    : url('/assets/images/bosque/bosque_100.png');
+    background-size     : cover;
+    background-position : center;
+    filter              : brightness(0.3);
+    z-index             : 0;
+}
+
+.fin-overlay {
+    position   : fixed;
+    inset      : 0;
+    background : radial-gradient(ellipse at center,
+        rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%);
+    z-index    : 1;
+}
+
+.fin-contenedor {
+    position        : relative;
+    z-index         : 3;
+    display         : flex;
+    flex-direction  : column;
+    align-items     : center;
+    gap             : 1.2rem;
+    padding         : 2rem;
+    max-width       : 600px;
+    width           : 90%;
+    text-align      : center;
+}
+
+.fin-header {
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    gap            : 0.5rem;
+}
+
+.fin-icono {
+    font-size : 3rem;
+    animation : flotar 3s ease-in-out infinite;
+}
+
+.fin-titulo {
+    font-family : var(--font-principal);
+    font-size   : 1.8rem;
+    color       : var(--color-acento2);
+    text-shadow : var(--glow-dorado);
+}
+
+/* criatura final */
+.fin-criatura-contenedor {
+    position : relative;
+    display  : flex;
+    align-items     : center;
+    justify-content : center;
+}
+
+.fin-criatura-aura {
+    position      : absolute;
+    width         : 250px;
+    height        : 250px;
+    border-radius : 50%;
+    background    : radial-gradient(circle,
+        rgba(200, 169, 110, 0.3) 0%, transparent 70%);
+    animation     : pulsar 3s ease-in-out infinite;
+}
+
+.fin-criatura-img {
+    width      : 200px;
+    height     : 200px;
+    object-fit : contain;
+    position   : relative;
+    z-index    : 2;
+    animation  : flotar 3s ease-in-out infinite;
+    filter     : drop-shadow(0 0 30px rgba(200, 169, 110, 0.6));
+}
+
+/* stats */
+.fin-stats {
+    display         : flex;
+    gap             : 1rem;
+    justify-content : center;
+    flex-wrap       : wrap;
+}
+
+.fin-stat {
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    gap            : 0.3rem;
+    padding        : 0.8rem 1.2rem;
+    background     : var(--color-panel);
+    border         : 1px solid var(--color-borde);
+    border-radius  : 12px;
+    min-width      : 100px;
+}
+
+.fin-stat-icono { font-size: 1.3rem; }
+.fin-stat-label { font-size: 0.65rem; color: var(--color-texto-suave); }
+.fin-stat-valor { font-size: 1rem; color: var(--color-acento); font-weight: bold; }
+
+/* evolución */
+.fin-evolucion {
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    gap            : 0.3rem;
+    padding        : 0.8rem 2rem;
+    background     : rgba(200, 169, 110, 0.1);
+    border         : 1px solid var(--color-acento2);
+    border-radius  : 20px;
+}
+
+.fin-evolucion-label { font-size: 0.75rem; color: var(--color-texto-suave); }
+.fin-evolucion-valor {
+    font-family : var(--font-principal);
+    font-size   : 1.2rem;
+    color       : var(--color-acento2);
+    text-shadow : var(--glow-dorado);
+}
+
+/* mensaje */
+.fin-mensaje {
+    color       : var(--color-texto-suave);
+    line-height : 1.7;
+    font-style  : italic;
+    font-family : var(--font-principal);
+    font-size   : 0.95rem;
+}
+
+.fin-reflexion {
+    font-family  : var(--font-principal);
+    font-style   : italic;
+    color        : rgba(160, 152, 128, 0.7);
+    font-size    : 0.85rem;
+    padding      : 0.8rem 1rem;
+    border-left  : 2px solid var(--color-acento2);
+    text-align   : left;
+}
+
+/* botones */
+.fin-botones {
+    display : flex;
+    gap     : 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.btn-secundario {
+    padding       : 0.9rem 2rem;
+    background    : rgba(255, 255, 255, 0.05);
+    border        : 1px solid var(--color-borde);
+    color         : var(--color-texto-suave);
+    font-size     : 1rem;
+    border-radius : 30px;
+    cursor        : pointer;
+    transition    : var(--transicion);
+    font-family   : var(--font-principal);
+}
+
+.btn-secundario:hover {
+    background   : rgba(255, 255, 255, 0.1);
+    border-color : var(--color-acento);
+    color        : var(--color-acento);
+}

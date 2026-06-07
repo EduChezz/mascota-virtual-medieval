@@ -238,6 +238,7 @@
             <div class="header-info">
                 <span id="nombre-criatura" class="criatura-nombre">—</span>
                 <span id="fase-criatura" class="criatura-fase">—</span>
+                <span id="badge-tendencia" class="badge-tendencia oculto"></span>
             </div>
             <div class="header-dias">
                 <span class="header-label">Día</span>
@@ -385,21 +386,71 @@
     </div>
 
     <!-- ══════════════════════════════════════ -->
-    <!-- PANTALLA FIN — Retorno o Pérdida      -->
+    <!-- PANTALLA FIN — Resumen del ciclo      -->
     <!-- ══════════════════════════════════════ -->
     <div id="pantalla-fin" class="pantalla">
 
+        <div class="fin-fondo"></div>
+        <div class="fin-overlay"></div>
+
         <div class="fin-contenedor">
-            <div class="fin-icono" id="fin-icono">✨</div>
-            <h2 class="fin-titulo" id="fin-titulo">El ciclo se completa</h2>
+
+            <!-- icono y título -->
+            <div class="fin-header">
+                <div class="fin-icono" id="fin-icono">✨</div>
+                <h2 class="fin-titulo" id="fin-titulo">El ciclo se completa</h2>
+            </div>
+
+            <!-- imagen criatura final -->
+            <div class="fin-criatura-contenedor">
+                <div class="fin-criatura-aura" id="fin-criatura-aura"></div>
+                <img class="fin-criatura-img" id="fin-criatura-img" src="" alt="Criatura">
+            </div>
+
+            <!-- stats del ciclo -->
+            <div class="fin-stats">
+                <div class="fin-stat">
+                    <span class="fin-stat-icono">📅</span>
+                    <span class="fin-stat-label">Días vividos</span>
+                    <span class="fin-stat-valor" id="fin-dias">0/15</span>
+                </div>
+                <div class="fin-stat">
+                    <span class="fin-stat-icono">🌳</span>
+                    <span class="fin-stat-label">Bosque final</span>
+                    <span class="fin-stat-valor" id="fin-bosque">0%</span>
+                </div>
+                <div class="fin-stat">
+                    <span class="fin-stat-icono" id="fin-logro-icono">💚</span>
+                    <span class="fin-stat-label">Mayor logro</span>
+                    <span class="fin-stat-valor" id="fin-logro">—</span>
+                </div>
+            </div>
+
+            <!-- evolución alcanzada -->
+            <div class="fin-evolucion" id="fin-evolucion">
+                <span class="fin-evolucion-label">Evolución alcanzada</span>
+                <span class="fin-evolucion-valor" id="fin-evolucion-valor">—</span>
+            </div>
+
+            <!-- mensaje final -->
             <p class="fin-mensaje" id="fin-mensaje"></p>
+
+            <!-- reflexión -->
             <p class="fin-reflexion">
-                "Quien aprende a cuidar a un ser pequeño,
+                "Quien aprende a cuidar a un ser pequeño,<br>
                 aprende a respetar toda vida."
             </p>
-            <button class="btn-primario" id="btn-reiniciar">
-                🌱 Iniciar nuevo ciclo
-            </button>
+
+            <!-- botones -->
+            <div class="fin-botones">
+                <button class="btn-primario" id="btn-reiniciar">
+                    🌱 Nuevo ciclo
+                </button>
+                <button class="btn-secundario" id="btn-ver-historial">
+                    📊 Ver historial
+                </button>
+            </div>
+
         </div>
 
     </div>

@@ -2,25 +2,33 @@
 // CLASE: Estadisticas
 // Maneja todas las variables numéricas
 // que determinan el estado de la criatura
+//
+// SISTEMA DE URGENCIA:
+// ─────────────────────────────────────────────
+// hambre > 70    → urgencia alimentar
+// energia < 20   → urgencia dormir
+// vinculo < 20   → urgencia vinculo
+// vitalidad < 20 → peligro critica
+// ─────────────────────────────────────────────
 // ============================================
 
 export class Estadisticas {
 
     constructor() {
-        this.vitalidad  = 100   // 0-100: vida general
-        this.hambre     = 0     // 0-100: 0=lleno, 100=muriendo de hambre
-        this.espiritu   = 100   // 0-100: felicidad/animo
-        this.energia    = 100   // 0-100: cansancio
-        this.vinculo    = 50    // 0-100: lazos con el cuidador
+        this.vitalidad = 100
+        this.hambre    = 0
+        this.espiritu  = 100
+        this.energia   = 100
+        this.vinculo   = 50
     }
 
     // ── Getters ──────────────────────────────
 
-    getVitalidad()  { return this.vitalidad }
-    getHambre()     { return this.hambre    }
-    getEspiritu()   { return this.espiritu  }
-    getEnergia()    { return this.energia   }
-    getVinculo()    { return this.vinculo   }
+    getVitalidad() { return this.vitalidad }
+    getHambre()    { return this.hambre    }
+    getEspiritu()  { return this.espiritu  }
+    getEnergia()   { return this.energia   }
+    getVinculo()   { return this.vinculo   }
 
     // ── Modificadores con límites 0-100 ──────
 
@@ -29,16 +37,125 @@ export class Estadisticas {
     }
 
     // ── Degradación natural con el tiempo ────
-    // Se llama cada cierto intervalo automáticamente
 
     degradar() {
-        this.modificar('hambre',    +3)   // hambre sube sola
-        this.modificar('espiritu',  -2)   // espíritu baja sola
-        this.modificar('energia',   -1)   // energía baja sola
-        this.modificar('vitalidad', this.hambre > 80 ? -5 : -1)
+        // hambre sube sola
+        this.modificar('hambre', +3)
+
+        // espíritu baja solo
+        this.modificar('espiritu', -2)
+
+        // energía baja sola
+        this.modificar('energia', -1)
+
+        // vitalidad baja más rápido si hay urgencias
+        if (this.hambre > 70) {
+            this.modificar('vitalidad', -5)  // urgencia hambre
+        } else if (this.vinculo < 20) {
+            this.modificar('vitalidad', -3)  // urgencia vínculo
+        } else {
+            this.modificar('vitalidad', -1)  // normal
+        }
     }
 
-    // ── Serialización para MongoDB ────────────
+    // ── Sistema de urgencias ─────────────────
+
+    getUrgencias() {
+        const urgencias = []
+
+        if (this.hambre > 70) {
+            urgencias.push({
+                tipo     : 'hambre',
+                nivel    : this.hambre > 90 ? 'critica' : 'alta',
+                mensaje  : '¡La criatura tiene hambre! El bosque se debilita.',
+                icono    : '🍃',
+                accion   : 'alimentar'
+            })
+        }
+
+        if (this.energia < 20) {
+            urgencias.push({
+                tipo     : 'energia',
+                nivel    : this.energia < 10 ? 'critica' : 'alta',
+                mensaje  : 'La criatura está agotada... necesita descanso.',
+                icono    : '🌙',
+                accion   : 'dormir'
+            })
+        }
+
+        if (this.vinculo < 20) {
+            urgencias.push({
+                tipo     : 'vinculo',
+                nivel    : this.vinculo < 10 ? 'critica' : 'alta',
+                mensaje  : 'El vínculo se rompe... habla con tu criatura.',
+                icono    : '💔',
+                accion   : 'hablar'
+            })
+        }
+
+        if (this.vitalidad < 20) {
+            urgencias.push({
+                tipo     : 'vitalidad',
+                nivel    : 'critica',
+                mensaje  : '⚠️ La criatura está en peligro crítico.',
+                icono    : '❤️',
+                accion   : 'alimentar'
+            })
+        }
+
+        return urgencias
+    }
+
+    // ── Tendencia de evolución ────────────────
+
+    getTendenciaEvolucion() {
+        const s = this
+
+        // verificar si todo está bajo → umbris
+        if (s.vitalidad < 40 && s.espiritu < 40 &&
+            s.energia < 40   && s.vinculo < 40) {
+            return { tipo: 'umbris', icono: '💔', nombre: 'Umbris' }
+        }
+
+        // verificar equilibrio → aether
+        if (s.vitalidad > 60 && s.espiritu > 60 &&
+            s.energia > 60   && s.vinculo > 60 && s.hambre < 40) {
+            return { tipo: 'aether', icono: '✨', nombre: 'Aether' }
+        }
+
+        // estadística dominante
+        const puntuaciones = {
+            natura  : s.vinculo,
+            umbra   : s.energia,
+            ignis   : s.espiritu,
+            aqua    : s.vitalidad
+        }
+
+        const iconos = {
+            natura : '🌿',
+            umbra  : '🌙',
+            ignis  : '🔥',
+            aqua   : '💧'
+        }
+
+        const nombres = {
+            natura : 'Natura',
+            umbra  : 'Umbra',
+            ignis  : 'Ignis',
+            aqua   : 'Aqua'
+        }
+
+        const dominante = Object.entries(puntuaciones)
+            .sort((a, b) => b[1] - a[1])[0]
+
+        return {
+            tipo   : dominante[0],
+            icono  : iconos[dominante[0]],
+            nombre : nombres[dominante[0]]
+        }
+    }
+
+    // ── Serialización ─────────────────────────
 
     toObject() {
         return {
@@ -46,11 +163,11 @@ export class Estadisticas {
             hambre    : this.hambre,
             espiritu  : this.espiritu,
             energia   : this.energia,
-            vinculo   : this.vinculo
+            vinculo   : this.vinculo,
+            urgencias : this.getUrgencias(),
+            tendencia : this.getTendenciaEvolucion()
         }
     }
-
-    // ── Cargar desde MongoDB ──────────────────
 
     static fromObject(obj) {
         const e = new Estadisticas()

@@ -211,21 +211,71 @@ export class Criatura {
         return '/assets/images/criatura/huevo.png'
     }
 
+    // ════════════════════════════════════════════
+    // RESUMEN FINAL DEL CICLO
+    // ════════════════════════════════════════════
+
+    _generarResumen() {
+        const stats  = this.estadisticas.toObject()
+        const estado = this.estadoActual?.getNombre()
+
+        // estadística más alta
+        const logros = [
+            { nombre: 'Guardián del Bosque',  valor: stats.vinculo,   icono: '💚' },
+            { nombre: 'Espíritu Nocturno',    valor: stats.energia,   icono: '🌙' },
+            { nombre: 'Llama Eterna',         valor: stats.espiritu,  icono: '🔥' },
+            { nombre: 'Fuerza Vital',         valor: stats.vitalidad, icono: '❤️' }
+        ]
+        const logroMaximo = logros.sort((a, b) => b.valor - a.valor)[0]
+
+        // mensaje según tipo de evolución
+        const mensajes = {
+            natura  : 'El bosque florecerá donde camines. Tu vínculo con la vida es eterno.',
+            umbra   : 'Las estrellas te guiarán siempre. Tu espíritu brilla en la oscuridad.',
+            ignis   : 'Tu llama nunca se apagará. El calor de tu cuidado ilumina el mundo.',
+            aqua    : 'Las aguas recuerdan tu nombre. Tu vitalidad fluye como un río eterno.',
+            aether  : 'Has alcanzado el equilibrio perfecto. Eres uno con el espíritu del bosque.',
+            umbris  : 'El bosque llora tu partida. Una nueva oportunidad espera en el horizonte.',
+            default : 'El ciclo continúa. El bosque recuerda cada momento de cuidado.'
+        }
+
+        const tipo    = this.tipoEvolucion || 'default'
+        const mensaje = estado === 'perdido'
+            ? 'El bosque se ha oscurecido... pero cada final es un nuevo comienzo.'
+            : (mensajes[tipo] || mensajes.default)
+
+        return {
+            nombre       : this.nombre,
+            fase         : this.fase,
+            tipo         : this.tipoEvolucion,
+            diasVividos  : this.diasVividos,
+            diasMaximos  : this.diasMaximos,
+            estadisticas : stats,
+            logroMaximo  : logroMaximo,
+            mensaje      : mensaje,
+            exitoso      : estado === 'retorno',
+            imagenFinal  : this.getImagenActual()
+        }
+    }
+
     // ════════════════════════════════════════
     // SERIALIZACIÓN
     // ════════════════════════════════════════
 
     toObject() {
         return {
-            nombre         : this.nombre,
-            fase           : this.fase,
-            tipoEvolucion  : this.tipoEvolucion,
-            diasVividos    : this.diasVividos,
-            diasMaximos    : this.diasMaximos,
-            estadisticas   : this.estadisticas.toObject(),
-            estado         : this.estadoActual.toObject(),
-            imagenActual   : this.getImagenActual(),
-            createdAt      : this.createdAt
+            nombre        : this.nombre,
+            fase          : this.fase,
+            tipoEvolucion : this.tipoEvolucion,
+            diasVividos   : this.diasVividos,
+            diasMaximos   : this.diasMaximos,
+            estadisticas  : this.estadisticas.toObject(),
+            estado        : this.estadoActual.toObject(),
+            imagenActual  : this.getImagenActual(),
+            tendencia     : this.estadisticas.getTendenciaEvolucion(),
+            urgencias     : this.estadisticas.getUrgencias(),
+            resumen       : this._generarResumen(),
+            createdAt     : this.createdAt
         }
     }
 
