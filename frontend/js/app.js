@@ -189,6 +189,27 @@ const GestorAudio = {
         }, intervalo)
     },
 
+    detenerTodo() {
+        // detener música
+        if (this.canales.musica) {
+            this.canales.musica.pause()
+            this.canales.musica.currentTime = 0
+            this.canales.musica = null
+        }
+        // detener efecto
+        if (this.canales.efecto) {
+            this.canales.efecto.pause()
+            this.canales.efecto.currentTime = 0
+            this.canales.efecto = null
+        }
+        // detener criatura
+        if (this.canales.criatura) {
+            this.canales.criatura.pause()
+            this.canales.criatura.currentTime = 0
+            this.canales.criatura = null
+        }
+    },
+
     getMusicaBosque(salud) {
         if (salud >= 50) return '/assets/sounds/ambiente/bosque_sano.mp3'
         return '/assets/sounds/ambiente/bosque_enfermo.mp3'
@@ -677,11 +698,7 @@ const Huevo = {
         setTimeout(() => flash.style.opacity = '1', 50)
 
         // PASO 2 → fade out de evolucion.mp3
-        if (GestorAudio.canales.efecto) {
-            GestorAudio._fadeOut(GestorAudio.canales.efecto, 800, () => {
-                GestorAudio.canales.efecto = null
-            })
-        }
+        GestorAudio.detenerTodo()
 
         // PASO 3 → flash desaparece
         setTimeout(() => {
@@ -705,20 +722,10 @@ const Huevo = {
 
         // PASO 5 → detener TODO y arrancar bosque_sano limpio
         setTimeout(() => {
-            // detener efecto si sigue sonando
-            if (GestorAudio.canales.efecto) {
-                GestorAudio.canales.efecto.pause()
-                GestorAudio.canales.efecto = null
-            }
-            // detener música anterior si sigue
-            if (GestorAudio.canales.musica) {
-                GestorAudio.canales.musica.pause()
-                GestorAudio.canales.musica = null
-            }
-            // arrancar bosque_sano limpio
+            GestorAudio.detenerTodo()
             setTimeout(() => {
                 GestorAudio.reproducirMusica('/assets/sounds/ambiente/bosque_sano.mp3')
-            }, 300)
+            }, 500)
         }, 1200)
 
         // PASO 6 → mostrar formulario nombre
