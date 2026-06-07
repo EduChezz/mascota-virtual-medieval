@@ -612,19 +612,35 @@ const Huevo = {
         this.countdownActivo = true
         this.countdownValor  = 5
         const e = this.elementos
-
-        // cuando empieza el countdown → evolucion.mp3
-        GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 6000)
-
         e.countdown.textContent = `${this.countdownValor}...`
+
+        // PASO 1 → fade out de nacimiento.mp3
+        GestorAudio._fadeOut(GestorAudio.canales.musica, 1000, () => {
+
+            // PASO 2 → silencio 300ms
+            setTimeout(() => {
+
+                // PASO 3 → evolucion.mp3 arranca limpio
+                GestorAudio.canales.efecto        = new Audio('/assets/sounds/eventos/evolucion.mp3')
+                GestorAudio.canales.efecto.volume = 0.7
+                GestorAudio.canales.efecto.play().catch(() => {})
+
+            }, 300)
+        })
 
         this.intervalCountdown = setInterval(() => {
             if (this.calor < this.maxCalor) {
                 this.countdownActivo = false
                 e.countdown.textContent = ''
                 clearInterval(this.intervalCountdown)
-                // volver a música de nacimiento
-                GestorAudio.reproducirMusica('/assets/sounds/eventos/nacimiento.mp3')
+
+                // si baja del 100% → volver a nacimiento.mp3
+                if (GestorAudio.canales.efecto) {
+                    GestorAudio._fadeOut(GestorAudio.canales.efecto, 500, () => {
+                        GestorAudio.canales.efecto = null
+                        GestorAudio.reproducirMusica('/assets/sounds/eventos/nacimiento.mp3')
+                    })
+                }
                 return
             }
 
@@ -646,31 +662,33 @@ const Huevo = {
 
         const e = this.elementos
 
-        // PASO 1 → Flash de luz blanca intensa
+        // PASO 1 → flash de luz
         const flash = document.createElement('div')
         flash.style.cssText = `
-            position   : fixed;
-            inset      : 0;
-            background : white;
-            opacity    : 0;
-            z-index    : 999;
-            transition : opacity 0.3s ease;
+            position       : fixed;
+            inset          : 0;
+            background     : white;
+            opacity        : 0;
+            z-index        : 999;
+            transition     : opacity 0.3s ease;
             pointer-events : none;
         `
         document.body.appendChild(flash)
-
-        // activar flash
         setTimeout(() => flash.style.opacity = '1', 50)
 
-        // PASO 2 → evolucion.mp3 en el flash
-        GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 3000)
+        // PASO 2 → fade out de evolucion.mp3
+        if (GestorAudio.canales.efecto) {
+            GestorAudio._fadeOut(GestorAudio.canales.efecto, 800, () => {
+                GestorAudio.canales.efecto = null
+            })
+        }
 
-        // PASO 3 → Flash desaparece, aparece el bosque
+        // PASO 3 → flash desaparece
         setTimeout(() => {
             flash.style.transition = 'opacity 0.8s ease'
             flash.style.opacity    = '0'
 
-            // cambiar fondo a bosque
+            // fondo bosque aparece
             const fondo = document.querySelector('.crear-fondo')
             if (fondo) {
                 fondo.style.filter     = 'brightness(0.7)'
@@ -682,17 +700,15 @@ const Huevo = {
 
         }, 400)
 
-        // PASO 4 → quitar flash del DOM
-        setTimeout(() => {
-            flash.remove()
-        }, 1500)
+        // PASO 4 → quitar flash
+        setTimeout(() => flash.remove(), 1500)
 
-        // PASO 5 → música bosque_sano después de la eclosión
+        // PASO 5 → bosque_sano.mp3 fade in suave
         setTimeout(() => {
             GestorAudio.reproducirMusica('/assets/sounds/ambiente/bosque_sano.mp3')
-        }, 2000)
+        }, 1200)
 
-        // PASO 6 → mostrar fase de nombre
+        // PASO 6 → mostrar formulario nombre
         setTimeout(() => {
             document.getElementById('fase-calentamiento').classList.add('oculto')
             document.getElementById('fase-nombre').classList.remove('oculto')
