@@ -658,3 +658,274 @@ body {
     30%  { left: 150%;  }
     100% { left: 150%;  }
 }
+
+/* ══════════════════════════════════════════════
+   MINIJUEGO DEL HUEVO
+   ══════════════════════════════════════════════ */
+
+/* fondo de la pantalla crear */
+.crear-fondo {
+    position            : fixed;
+    inset               : 0;
+    background-image    : url('/assets/images/bosque/bosque_100.png');
+    background-size     : cover;
+    background-position : center;
+    filter              : brightness(0.4);
+    z-index             : 0;
+}
+
+.crear-overlay {
+    position   : fixed;
+    inset      : 0;
+    background : radial-gradient(ellipse at center,
+        rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%);
+    z-index    : 1;
+}
+
+.calor-particulas {
+    position       : fixed;
+    inset          : 0;
+    pointer-events : none;
+    z-index        : 2;
+    overflow       : hidden;
+}
+
+/* contenedor principal */
+#pantalla-crear .crear-contenedor {
+    position        : relative;
+    z-index         : 3;
+    display         : flex;
+    flex-direction  : column;
+    align-items     : center;
+    justify-content : center;
+    gap             : 1.2rem;
+    padding         : 2rem;
+    width           : 100%;
+}
+
+.oculto { display: none !important; }
+
+/* ── Huevo ─────────────────────────────────── */
+.huevo-wrapper {
+    position        : relative;
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    width           : 200px;
+    height          : 200px;
+}
+
+.huevo-aura {
+    position      : absolute;
+    inset         : -20px;
+    border-radius : 50%;
+    background    : radial-gradient(circle,
+        rgba(200, 169, 110, 0.2) 0%, transparent 70%);
+    animation     : pulsar 2s ease-in-out infinite;
+    transition    : background 0.5s ease;
+}
+
+#huevo-sprite {
+    font-size  : 8rem;
+    position   : relative;
+    z-index    : 2;
+    transition : filter 0.3s ease, transform 0.1s ease;
+    cursor     : default;
+    user-select: none;
+}
+
+.huevo-grietas {
+    position      : absolute;
+    inset         : 0;
+    border-radius : 50%;
+    opacity       : 0;
+    transition    : opacity 0.5s ease;
+    font-size     : 6rem;
+    display       : flex;
+    align-items   : center;
+    justify-content: center;
+}
+
+/* estados del huevo por temperatura */
+.huevo-frio    { filter: hue-rotate(200deg) brightness(0.8); }
+.huevo-tibio   { filter: hue-rotate(30deg)  brightness(1.1); }
+.huevo-caliente{ filter: hue-rotate(-20deg) brightness(1.3); }
+.huevo-maximo  {
+    filter    : hue-rotate(-30deg) brightness(1.5);
+    animation : vibrar 0.1s ease-in-out infinite !important;
+}
+
+/* ── Barra de calor ─────────────────────────── */
+.calor-barra-wrapper {
+    display     : flex;
+    align-items : center;
+    gap         : 0.8rem;
+    width       : min(400px, 90vw);
+}
+
+.calor-icono-frio,
+.calor-icono-fuego { font-size: 1.5rem; }
+
+.calor-barra-contenedor {
+    flex          : 1;
+    height        : 20px;
+    background    : rgba(255, 255, 255, 0.08);
+    border-radius : 10px;
+    overflow      : hidden;
+    position      : relative;
+    border        : 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.calor-barra {
+    height        : 100%;
+    width         : 0%;
+    border-radius : 10px;
+    background    : linear-gradient(90deg, #1a4a8e, #4a90e2);
+    transition    : width 0.2s ease, background 0.5s ease;
+    position      : relative;
+}
+
+.calor-barra.tibio {
+    background : linear-gradient(90deg, #8e4a1a, #e2904a);
+}
+
+.calor-barra.caliente {
+    background : linear-gradient(90deg, #8e1a1a, #e24a4a);
+}
+
+.calor-barra.maximo {
+    background : linear-gradient(90deg, #c8a96e, #fff176);
+    box-shadow : 0 0 15px rgba(255, 215, 100, 0.8);
+    animation  : pulsarBarra 0.5s ease-in-out infinite;
+}
+
+.calor-brillo {
+    position   : absolute;
+    top        : 0;
+    left       : -100%;
+    width      : 40%;
+    height     : 100%;
+    background : linear-gradient(90deg,
+        transparent, rgba(255,255,255,0.3), transparent);
+    animation  : brilloBarra 2s ease-in-out infinite;
+}
+
+.calor-porcentaje {
+    font-family : var(--font-principal);
+    font-size   : 1rem;
+    color       : var(--color-acento2);
+    text-shadow : var(--glow-dorado);
+}
+
+.calor-mensaje {
+    font-family : var(--font-principal);
+    font-size   : 1rem;
+    color       : var(--color-texto-suave);
+    font-style  : italic;
+    text-align  : center;
+    max-width   : 400px;
+    min-height  : 1.5rem;
+    transition  : color 0.5s ease;
+}
+
+/* ── Cuenta regresiva ───────────────────────── */
+.calor-countdown {
+    font-family : var(--font-principal);
+    font-size   : 4rem;
+    color       : var(--color-acento);
+    text-shadow : var(--glow-verde);
+    min-height  : 5rem;
+    display     : flex;
+    align-items : center;
+    animation   : fadeIn 0.3s ease;
+}
+
+/* ── Botón calentar ─────────────────────────── */
+.btn-calentar {
+    display       : flex;
+    align-items   : center;
+    gap           : 0.8rem;
+    padding       : 1rem 3rem;
+    background    : linear-gradient(135deg, #3a1a0a, #8e4a1a);
+    border        : 2px solid #e2904a;
+    border-radius : 50px;
+    color         : #e2904a;
+    font-family   : var(--font-principal);
+    font-size     : 1.3rem;
+    cursor        : pointer;
+    transition    : var(--transicion);
+    box-shadow    : 0 0 20px rgba(226, 144, 74, 0.4);
+    user-select   : none;
+}
+
+.btn-calentar:hover {
+    transform  : scale(1.05);
+    box-shadow : 0 0 35px rgba(226, 144, 74, 0.7);
+}
+
+.btn-calentar:active {
+    transform  : scale(0.96);
+    box-shadow : 0 0 50px rgba(255, 200, 100, 0.9);
+}
+
+.btn-calentar.maximo {
+    background : linear-gradient(135deg, #4a3a0a, #c8a96e);
+    border-color: #fff176;
+    color       : #fff176;
+    box-shadow  : 0 0 30px rgba(255, 215, 100, 0.8);
+    animation   : pulsarBoton 0.5s ease-in-out infinite;
+}
+
+.btn-calentar-icono { font-size: 1.5rem; }
+
+.calor-tip {
+    font-size  : 0.75rem;
+    color      : var(--color-texto-suave);
+    opacity    : 0.7;
+}
+
+/* ── Fase nombre ────────────────────────────── */
+.nacimiento-luz {
+    position      : fixed;
+    inset         : 0;
+    background    : radial-gradient(circle,
+        rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+    opacity       : 0;
+    pointer-events: none;
+    transition    : opacity 0.5s ease;
+    z-index       : 10;
+}
+
+.nacimiento-luz.activa {
+    opacity : 1;
+}
+
+.huevo-animado.grande {
+    font-size : 6rem;
+    animation : flotar 2s ease-in-out infinite,
+                pulsar 1.5s ease-in-out infinite;
+}
+
+/* ── Animaciones del minijuego ──────────────── */
+@keyframes vibrar {
+    0%, 100% { transform: translateX(0)   rotate(0deg);   }
+    25%       { transform: translateX(-4px) rotate(-2deg); }
+    75%       { transform: translateX(4px)  rotate(2deg);  }
+}
+
+@keyframes pulsarBarra {
+    0%, 100% { opacity: 1;   }
+    50%       { opacity: 0.7; }
+}
+
+@keyframes brilloBarra {
+    0%   { left: -100%; }
+    50%  { left: 150%;  }
+    100% { left: 150%;  }
+}
+
+@keyframes eclosion {
+    0%   { transform: scale(1);    opacity: 1; }
+    50%  { transform: scale(1.5);  opacity: 0.5; }
+    100% { transform: scale(3);    opacity: 0; }
+}

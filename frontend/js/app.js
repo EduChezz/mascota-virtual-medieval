@@ -435,12 +435,235 @@ dom.btnAnterior.addEventListener('click',  () => irASlide(estado.slideActual - 1
 dom.btnComenzar.addEventListener('click',  () => {
     GestorAudio.pausarMusica()
     mostrarPantalla('crear')
+    setTimeout(() => Huevo.init(), 300)
 })
 
 // ════════════════════════════════════════════
-// CREAR CRIATURA
+// MINIJUEGO DEL HUEVO
 // ════════════════════════════════════════════
 
+const Huevo = {
+    calor            : 0,
+    maxCalor         : 100,
+    countdownActivo  : false,
+    countdownValor   : 3,
+    intervalBajada   : null,
+    intervalCountdown: null,
+    listo            : false,
+
+    // elementos del DOM
+    elementos : {
+        barra      : document.getElementById('calor-barra'),
+        porcentaje : document.getElementById('calor-porcentaje'),
+        mensaje    : document.getElementById('calor-mensaje'),
+        sprite     : document.getElementById('huevo-sprite'),
+        aura       : document.getElementById('huevo-aura'),
+        countdown  : document.getElementById('calor-countdown'),
+        btnCalentar: document.getElementById('btn-calentar'),
+        particulas : document.getElementById('calor-particulas')
+    },
+
+    mensajes : {
+        frio    : 'El huevo espiritual duerme... caliéntalo para despertarlo',
+        tibio   : 'El huevo empieza a sentir el calor... ¡sigue!',
+        caliente: '¡El espíritu despierta! ¡No te detengas!',
+        maximo  : '✨ ¡El huevo está listo para nacer! ¡Mantén el calor!'
+    },
+
+    init() {
+        this.calor = 0
+        this.listo = false
+        this.countdownActivo = false
+        this.actualizarUI()
+        this.iniciarBajadaAutomatica()
+    },
+
+    calentar() {
+        if (this.listo) return
+
+        // subida según velocidad de click
+        const incremento = this.calor > 66 ? 6 : 8
+        this.calor = Math.min(this.maxCalor, this.calor + incremento)
+
+        // efecto visual en el botón
+        this.elementos.btnCalentar.style.transform = 'scale(0.95)'
+        setTimeout(() => {
+            if (this.elementos.btnCalentar) {
+                this.elementos.btnCalentar.style.transform = 'scale(1)'
+            }
+        }, 100)
+
+        // crear partícula de calor
+        this.crearParticulaCalor()
+
+        // sonido
+        GestorAudio.reproducirEfecto('/assets/sounds/acciones/alimentar.mp3', 1000)
+
+        this.actualizarUI()
+
+        // verificar si llegó al máximo
+        if (this.calor >= this.maxCalor && !this.countdownActivo) {
+            this.iniciarCountdown()
+        }
+    },
+
+    actualizarUI() {
+        const p = this.calor
+        const e = this.elementos
+
+        // actualizar barra
+        e.barra.style.width       = `${p}%`
+        e.porcentaje.textContent  = `${Math.round(p)}%`
+
+        // color de la barra según temperatura
+        e.barra.className = 'calor-barra'
+        if (p >= 100)     e.barra.classList.add('maximo')
+        else if (p >= 67) e.barra.classList.add('caliente')
+        else if (p >= 34) e.barra.classList.add('tibio')
+
+        // estado del huevo
+        e.sprite.className = 'huevo-animado'
+        if (p >= 100) {
+            e.sprite.classList.add('huevo-maximo')
+            e.btnCalentar.classList.add('maximo')
+            e.mensaje.textContent = this.mensajes.maximo
+            e.aura.style.background = 'radial-gradient(circle, rgba(255,215,100,0.5) 0%, transparent 70%)'
+        } else if (p >= 67) {
+            e.sprite.classList.add('huevo-caliente')
+            e.btnCalentar.classList.remove('maximo')
+            e.mensaje.textContent = this.mensajes.caliente
+            e.aura.style.background = 'radial-gradient(circle, rgba(226,74,74,0.4) 0%, transparent 70%)'
+        } else if (p >= 34) {
+            e.sprite.classList.add('huevo-tibio')
+            e.btnCalentar.classList.remove('maximo')
+            e.mensaje.textContent = this.mensajes.tibio
+            e.aura.style.background = 'radial-gradient(circle, rgba(226,144,74,0.3) 0%, transparent 70%)'
+        } else {
+            e.sprite.classList.add('huevo-frio')
+            e.btnCalentar.classList.remove('maximo')
+            e.mensaje.textContent = this.mensajes.frio
+            e.aura.style.background = 'radial-gradient(circle, rgba(74,144,226,0.2) 0%, transparent 70%)'
+        }
+    },
+
+    iniciarBajadaAutomatica() {
+        if (this.intervalBajada) clearInterval(this.intervalBajada)
+        this.intervalBajada = setInterval(() => {
+            if (this.listo || this.countdownActivo) return
+
+            // bajada según nivel de calor
+            let bajada = 3
+            if (this.calor >= 67) bajada = 1
+            else if (this.calor >= 34) bajada = 2
+
+            this.calor = Math.max(0, this.calor - bajada)
+            this.actualizarUI()
+        }, 1000)
+    },
+
+    iniciarCountdown() {
+        this.countdownActivo  = true
+        this.countdownValor   = 3
+        const e = this.elementos
+        e.countdown.textContent = `${this.countdownValor}...`
+
+        // sonido épico
+        GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 4000)
+
+        this.intervalCountdown = setInterval(() => {
+            // verificar que el calor sigue al 100%
+            if (this.calor < this.maxCalor) {
+                this.countdownActivo = false
+                e.countdown.textContent = ''
+                clearInterval(this.intervalCountdown)
+                return
+            }
+
+            this.countdownValor--
+            e.countdown.textContent = this.countdownValor > 0
+                ? `${this.countdownValor}...`
+                : '✨'
+
+            if (this.countdownValor <= 0) {
+                clearInterval(this.intervalCountdown)
+                this.eclosionar()
+            }
+        }, 1000)
+    },
+
+    eclosionar() {
+        this.listo = true
+        if (this.intervalBajada) clearInterval(this.intervalBajada)
+
+        const e = this.elementos
+
+        // animación de eclosión
+        e.sprite.style.animation = 'eclosion 1s ease forwards'
+        e.aura.style.animation   = 'eclosion 1.2s ease forwards'
+
+        // luz de nacimiento
+        const luz = document.getElementById('nacimiento-luz')
+        if (luz) {
+            luz.classList.add('activa')
+            setTimeout(() => luz.classList.remove('activa'), 1000)
+        }
+
+        // sonido de nacimiento
+        setTimeout(() => {
+            GestorAudio.reproducirEvento('/assets/sounds/eventos/nacimiento.mp3', 3000)
+        }, 500)
+
+        // mostrar fase de nombre
+        setTimeout(() => {
+            document.getElementById('fase-calentamiento').classList.add('oculto')
+            document.getElementById('fase-nombre').classList.remove('oculto')
+            e.countdown.textContent = ''
+        }, 1500)
+    },
+
+    crearParticulaCalor() {
+        if (!this.elementos.particulas) return
+        const el       = document.createElement('div')
+        const emojis   = ['🔥', '✨', '⚡', '💫']
+        const emoji    = this.calor > 66
+            ? emojis[Math.floor(Math.random() * emojis.length)]
+            : '✨'
+        const x        = 35 + Math.random() * 30  // cerca del centro
+        const duration = 1000 + Math.random() * 1000
+
+        el.textContent = emoji
+        el.style.cssText = `
+            position   : absolute;
+            font-size  : ${0.5 + Math.random() * 0.8}rem;
+            left       : ${x}vw;
+            bottom     : 40%;
+            opacity    : 0.8;
+            animation  : volarMariposa ${duration}ms ease-out forwards;
+            pointer-events : none;
+        `
+        this.elementos.particulas.appendChild(el)
+        setTimeout(() => el.remove(), duration)
+    },
+
+    reset() {
+        this.calor           = 0
+        this.listo           = false
+        this.countdownActivo = false
+        this.countdownValor  = 3
+        if (this.intervalBajada)    clearInterval(this.intervalBajada)
+        if (this.intervalCountdown) clearInterval(this.intervalCountdown)
+        document.getElementById('fase-calentamiento')?.classList.remove('oculto')
+        document.getElementById('fase-nombre')?.classList.add('oculto')
+        this.actualizarUI()
+    }
+}
+
+// ── Evento botón calentar ─────────────────────
+document.getElementById('btn-calentar')?.addEventListener('click', () => {
+    Huevo.calentar()
+})
+
+// ── Evento crear criatura ─────────────────────
 dom.btnCrear.addEventListener('click', async () => {
     const nombre = dom.inputNombre.value.trim()
     if (nombre.length < 2) {
@@ -464,7 +687,6 @@ dom.btnCrear.addEventListener('click', async () => {
 
         if (data.exito) {
             estado.datosCriatura = data.datos
-            GestorAudio.reproducirEvento('/assets/sounds/eventos/nacimiento.mp3', 3000)
             mostrarNotificacion(`¡${nombre} ha despertado del huevo espiritual!`)
             setTimeout(() => {
                 mostrarPantalla('juego')
@@ -474,7 +696,8 @@ dom.btnCrear.addEventListener('click', async () => {
                 GestorAudio.reproducirMusica(
                     GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
                 )
-            }, 2000)
+                Huevo.reset()
+            }, 1000)
         } else {
             if (data.mensaje.includes('Ya existe')) {
                 await cargarEstado()

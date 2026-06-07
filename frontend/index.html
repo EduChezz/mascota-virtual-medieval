@@ -137,14 +137,67 @@
     </div>
 
     <!-- ══════════════════════════════════════ -->
-    <!-- PANTALLA CREAR — Nombrar la criatura  -->
+    <!-- PANTALLA CREAR — Minijuego del huevo  -->
     <!-- ══════════════════════════════════════ -->
     <div id="pantalla-crear" class="pantalla">
 
-        <div class="crear-contenedor">
-            <div class="huevo-animado">🥚</div>
-            <h2 class="crear-titulo">El huevo espera tu voz...</h2>
-            <p class="crear-subtitulo">Dale un nombre a tu criatura</p>
+        <!-- fondo del bosque -->
+        <div class="crear-fondo"></div>
+        <div class="crear-overlay"></div>
+
+        <!-- contenedor de partículas de calor -->
+        <div class="calor-particulas" id="calor-particulas"></div>
+
+        <!-- FASE 1: Minijuego calentamiento -->
+        <div class="crear-contenedor" id="fase-calentamiento">
+
+            <!-- huevo -->
+            <div class="huevo-wrapper" id="huevo-wrapper">
+                <div class="huevo-aura"     id="huevo-aura"></div>
+                <div class="huevo-animado"  id="huevo-sprite">🥚</div>
+                <div class="huevo-grietas"  id="huevo-grietas"></div>
+            </div>
+
+            <!-- mensaje -->
+            <p class="calor-mensaje" id="calor-mensaje">
+                El huevo espiritual duerme... caliéntalo para despertarlo
+            </p>
+
+            <!-- barra de calor -->
+            <div class="calor-barra-wrapper">
+                <span class="calor-icono-frio">❄️</span>
+                <div class="calor-barra-contenedor">
+                    <div class="calor-barra" id="calor-barra"></div>
+                    <div class="calor-brillo" id="calor-brillo"></div>
+                </div>
+                <span class="calor-icono-fuego">🔥</span>
+            </div>
+            <p class="calor-porcentaje" id="calor-porcentaje">0%</p>
+
+            <!-- cuenta regresiva -->
+            <div class="calor-countdown" id="calor-countdown"></div>
+
+            <!-- botón calentar -->
+            <button class="btn-calentar" id="btn-calentar">
+                <span class="btn-calentar-icono">🔥</span>
+                <span class="btn-calentar-texto">¡Calentar!</span>
+            </button>
+
+            <p class="calor-tip">
+                Haz click repetidamente para calentar el huevo
+            </p>
+
+        </div>
+
+        <!-- FASE 2: Nombrar la criatura -->
+        <div class="crear-contenedor oculto" id="fase-nombre">
+
+            <div class="nacimiento-luz" id="nacimiento-luz"></div>
+
+            <div class="huevo-animado grande">✨</div>
+
+            <h2 class="crear-titulo">¡La criatura ha nacido!</h2>
+            <p class="crear-subtitulo">Dale un nombre a tu compañero espiritual</p>
 
             <div class="crear-form">
                 <input
