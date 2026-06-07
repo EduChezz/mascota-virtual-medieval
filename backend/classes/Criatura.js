@@ -193,7 +193,7 @@ export class Criatura {
         const tipo         = this.tipoEvolucion || 'base'
 
         if (this.fase === 'huevo') {
-            return '/assets/images/criatura/huevo.png'
+            return '/assets/images/criatura/sylvae_base_paz.png'
         }
 
         if (this.fase === 'base') {

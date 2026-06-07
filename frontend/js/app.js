@@ -863,17 +863,21 @@ dom.btnCrear.addEventListener('click', async () => {
             setTimeout(() => {
                 // detener TODO antes de entrar al juego
                 GestorAudio.detenerTodo()
+                
                 mostrarPantalla('juego')
                 actualizarJuego(data.datos)
                 iniciarTickAutomatico()
                 iniciarParticulas(data.datos)
-                // música del juego limpia
+                Huevo.reset()
+
+                // música del juego limpia después de 800ms
                 setTimeout(() => {
+                    GestorAudio.detenerTodo()
                     GestorAudio.reproducirMusica(
                         GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
                     )
-                }, 500)
-                Huevo.reset()
+                }, 800)
+
             }, 1000)
         } else {
             if (data.mensaje.includes('Ya existe')) {
