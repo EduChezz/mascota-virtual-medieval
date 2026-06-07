@@ -1,22 +1,73 @@
 // ============================================
 // APP.JS — Lógica del Frontend
-// Actualizado con sistema de evoluciones Sylvae
-// + Imágenes reales + Animaciones de partículas
+// El Juramento del Bosque Vivo
+// Con sistema de sonidos completo
 // ============================================
 
 const API = 'https://mascota-virtual-medieval.onrender.com/api/mascota'
+
+// ════════════════════════════════════════════
+// GESTOR DE AUDIO
+// ════════════════════════════════════════════
+
+const Audio_ = {
+    musicaActual : null,
+    efectoActual : null,
+    volumenMusica: 0.4,
+    volumenEfecto: 0.7,
+
+    reproducirMusica(ruta) {
+        if (this.musicaActual) {
+            this.musicaActual.pause()
+            this.musicaActual.currentTime = 0
+        }
+        this.musicaActual = new Audio(ruta)
+        this.musicaActual.loop   = true
+        this.musicaActual.volume = this.volumenMusica
+        this.musicaActual.play().catch(() => {})
+    },
+
+    reproducirEfecto(ruta) {
+        const efecto = new Audio(ruta)
+        efecto.volume = this.volumenEfecto
+        efecto.play().catch(() => {})
+    },
+
+    pausarMusica() {
+        if (this.musicaActual) this.musicaActual.pause()
+    },
+
+    getMusicaBosque(salud) {
+        if (salud >= 50) return '/assets/sounds/ambiente/bosque_sano.mp3'
+        return '/assets/sounds/ambiente/bosque_enfermo.mp3'
+    },
+
+    getSonidoCriatura(estado) {
+        const sonidos = {
+            alegre      : '/assets/sounds/criatura/feliz.mp3',
+            paz         : '/assets/sounds/criatura/feliz.mp3',
+            hambriento  : '/assets/sounds/criatura/triste.mp3',
+            triste      : '/assets/sounds/criatura/triste.mp3',
+            somnoliento : '/assets/sounds/criatura/triste.mp3',
+            peligro     : '/assets/sounds/criatura/peligro.mp3',
+            perdido     : '/assets/sounds/criatura/peligro.mp3'
+        }
+        return sonidos[estado] || '/assets/sounds/criatura/feliz.mp3'
+    }
+}
 
 // ════════════════════════════════════════════
 // ESTADO LOCAL
 // ════════════════════════════════════════════
 
 const estado = {
-    pantalla      : 'intro',
-    slideActual   : 0,
-    totalSlides   : 5,
-    datosCriatura : null,
-    tickInterval  : null,
-    particulasInterval : null
+    pantalla           : 'intro',
+    slideActual        : 0,
+    totalSlides        : 5,
+    datosCriatura      : null,
+    tickInterval       : null,
+    particulasInterval : null,
+    estadoAnterior     : null
 }
 
 // ════════════════════════════════════════════
@@ -30,28 +81,27 @@ const dom = {
         juego  : document.getElementById('pantalla-juego'),
         fin    : document.getElementById('pantalla-fin')
     },
-    slides        : document.querySelectorAll('.intro-slide'),
-    btnAnterior   : document.getElementById('btn-anterior'),
-    btnSiguiente  : document.getElementById('btn-siguiente'),
-    btnComenzar   : document.getElementById('btn-comenzar'),
-    introPuntos   : document.getElementById('intro-puntos'),
-    inputNombre   : document.getElementById('input-nombre'),
-    btnCrear      : document.getElementById('btn-crear'),
-    crearError    : document.getElementById('crear-error'),
-    bosqueFondo   : document.getElementById('bosque-fondo'),
-    bosqueOverlay : document.getElementById('bosque-overlay'),
-    barraBosque   : document.getElementById('barra-bosque'),
-    valorBosque   : document.getElementById('valor-bosque'),
-    nombreCriatura: document.getElementById('nombre-criatura'),
-    faseCriatura  : document.getElementById('fase-criatura'),
-    diasVividos   : document.getElementById('dias-vividos'),
-    criaturaSprite: document.getElementById('criatura-sprite'),
-    criaturaAura  : document.getElementById('criatura-aura'),
-    estadoMensaje : document.getElementById('estado-mensaje'),
-    accionesPanel : document.getElementById('acciones-panel'),
-    botonesAccion : document.querySelectorAll('.btn-accion'),
-    notificacion  : document.getElementById('notificacion'),
-    musicaFondo   : document.getElementById('musica-fondo'),
+    slides         : document.querySelectorAll('.intro-slide'),
+    btnAnterior    : document.getElementById('btn-anterior'),
+    btnSiguiente   : document.getElementById('btn-siguiente'),
+    btnComenzar    : document.getElementById('btn-comenzar'),
+    introPuntos    : document.getElementById('intro-puntos'),
+    inputNombre    : document.getElementById('input-nombre'),
+    btnCrear       : document.getElementById('btn-crear'),
+    crearError     : document.getElementById('crear-error'),
+    bosqueFondo    : document.getElementById('bosque-fondo'),
+    bosqueOverlay  : document.getElementById('bosque-overlay'),
+    barraBosque    : document.getElementById('barra-bosque'),
+    valorBosque    : document.getElementById('valor-bosque'),
+    nombreCriatura : document.getElementById('nombre-criatura'),
+    faseCriatura   : document.getElementById('fase-criatura'),
+    diasVividos    : document.getElementById('dias-vividos'),
+    criaturaSprite : document.getElementById('criatura-sprite'),
+    criaturaAura   : document.getElementById('criatura-aura'),
+    estadoMensaje  : document.getElementById('estado-mensaje'),
+    accionesPanel  : document.getElementById('acciones-panel'),
+    botonesAccion  : document.querySelectorAll('.btn-accion'),
+    notificacion   : document.getElementById('notificacion'),
     stats : {
         vitalidad : { barra: document.getElementById('barra-vitalidad'), val: document.getElementById('val-vitalidad') },
         hambre    : { barra: document.getElementById('barra-hambre'),    val: document.getElementById('val-hambre')    },
@@ -98,6 +148,8 @@ function iniciarIntro() {
         dom.introPuntos.appendChild(punto)
     }
     mostrarSlide(0)
+    // música de intro
+    Audio_.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
 }
 
 function mostrarSlide(indice) {
@@ -115,7 +167,10 @@ function irASlide(indice) {
 
 dom.btnSiguiente.addEventListener('click', () => irASlide(estado.slideActual + 1))
 dom.btnAnterior.addEventListener('click',  () => irASlide(estado.slideActual - 1))
-dom.btnComenzar.addEventListener('click',  () => mostrarPantalla('crear'))
+dom.btnComenzar.addEventListener('click',  () => {
+    Audio_.pausarMusica()
+    mostrarPantalla('crear')
+})
 
 // ════════════════════════════════════════════
 // CREAR CRIATURA
@@ -144,10 +199,16 @@ dom.btnCrear.addEventListener('click', async () => {
 
         if (data.exito) {
             estado.datosCriatura = data.datos
-            mostrarPantalla('juego')
-            actualizarJuego(data.datos)
-            iniciarTickAutomatico()
-            iniciarParticulas(data.datos)
+            // sonido de nacimiento
+            Audio_.reproducirEfecto('/assets/sounds/eventos/nacimiento.mp3')
+            setTimeout(() => {
+                mostrarPantalla('juego')
+                actualizarJuego(data.datos)
+                iniciarTickAutomatico()
+                iniciarParticulas(data.datos)
+                // música del bosque
+                Audio_.reproducirMusica(Audio_.getMusicaBosque(data.datos.bosque?.salud ?? 100))
+            }, 1500)
             mostrarNotificacion(`¡${nombre} ha despertado del huevo espiritual!`)
         } else {
             if (data.mensaje.includes('Ya existe')) {
@@ -183,6 +244,7 @@ async function cargarEstado() {
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
             iniciarParticulas(data.datos)
+            Audio_.reproducirMusica(Audio_.getMusicaBosque(data.datos.bosque?.salud ?? 100))
         }
     } catch (error) {
         console.error('Error al cargar estado:', error)
@@ -219,10 +281,10 @@ function actualizarJuego(datos) {
         actualizarStat('vinculo',   estadisticas.vinculo)
     }
 
-    // imagen real de la criatura
+    // imagen
     actualizarImagenCriatura(imagenActual, fase, tipoEvolucion)
 
-    // mensaje del estado
+    // mensaje
     if (est?.mensaje) dom.estadoMensaje.textContent = est.mensaje
 
     // aura
@@ -231,8 +293,24 @@ function actualizarJuego(datos) {
     // botones
     if (est?.acciones) actualizarBotonesAccion(est.acciones)
 
-    // partículas según bosque
+    // partículas
     actualizarParticulas(saludBosque, tipoEvolucion)
+
+    // sonido criatura cuando cambia estado
+    if (estado.estadoAnterior !== est?.nombre) {
+        if (est?.nombre && estado.estadoAnterior !== null) {
+            setTimeout(() => {
+                Audio_.reproducirEfecto(Audio_.getSonidoCriatura(est.nombre))
+            }, 500)
+        }
+        estado.estadoAnterior = est?.nombre
+    }
+
+    // música según salud del bosque
+    const musicaCorrecta = Audio_.getMusicaBosque(saludBosque)
+    if (Audio_.musicaActual?.src && !Audio_.musicaActual.src.includes(musicaCorrecta)) {
+        Audio_.reproducirMusica(musicaCorrecta)
+    }
 
     // fin de juego
     if (est?.nombre === 'retorno' || est?.nombre === 'perdido') {
@@ -255,10 +333,7 @@ function obtenerLabelFase(fase, tipo) {
         retorno : '🌿 Retorno al Bosque',
         perdido : '💔 Perdido'
     }
-
-    if (fase === 'evolucionada' && tipo) {
-        return labels.evolucionada[tipo] || '✨ Sylvae'
-    }
+    if (fase === 'evolucionada' && tipo) return labels.evolucionada[tipo] || '✨ Sylvae'
     return labels[fase] || fase
 }
 
@@ -270,45 +345,26 @@ function actualizarStat(nombre, valor) {
 }
 
 function actualizarFondoBosque(salud) {
-    const fondos = {
-        100 : "url('/assets/images/bosque/bosque_100.png')",
-        75  : "url('/assets/images/bosque/bosque_75.png')",
-        50  : "url('/assets/images/bosque/bosque_50.png')",
-        0   : "url('/assets/images/bosque/bosque_muerto.png')"
-    }
-
-    let fondo = fondos[0]
-    if (salud >= 75) fondo = fondos[100]
-    else if (salud >= 50) fondo = fondos[75]
-    else if (salud >= 25) fondo = fondos[50]
+    let fondo = ''
+    if (salud >= 75)      fondo = "url('/assets/images/bosque/bosque_100.png')"
+    else if (salud >= 50) fondo = "url('/assets/images/bosque/bosque_75.png')"
+    else if (salud >= 25) fondo = "url('/assets/images/bosque/bosque_50.png')"
+    else                  fondo = "url('/assets/images/bosque/bosque_muerto.png')"
 
     dom.bosqueFondo.style.backgroundImage    = fondo
     dom.bosqueFondo.style.backgroundSize     = 'cover'
     dom.bosqueFondo.style.backgroundPosition = 'center'
-    dom.bosqueFondo.style.transition         = 'background-image 2s ease'
 }
 
 function actualizarImagenCriatura(imagenActual, fase, tipo) {
-    // limpiar sprite anterior
     dom.criaturaSprite.innerHTML = ''
-
     const img = document.createElement('img')
     img.src   = imagenActual || '/assets/images/criatura/huevo.png'
     img.alt   = 'Sylvae'
-    img.style.cssText = `
-        width: 180px;
-        height: 180px;
-        object-fit: contain;
-        filter: drop-shadow(0 0 20px ${obtenerColorTipo(tipo)});
-        animation: flotar 3s ease-in-out infinite;
-    `
-
-    // fallback si la imagen no carga
     img.onerror = () => {
-        dom.criaturaSprite.innerHTML = fase === 'huevo' ? '🥚' : '🐾'
+        dom.criaturaSprite.innerHTML  = fase === 'huevo' ? '🥚' : '🐾'
         dom.criaturaSprite.style.fontSize = '7rem'
     }
-
     dom.criaturaSprite.appendChild(img)
 }
 
@@ -338,171 +394,119 @@ function actualizarBotonesAccion(accionesDisponibles) {
 }
 
 // ════════════════════════════════════════════
-// SISTEMA DE PARTÍCULAS / ANIMACIONES
+// SISTEMA DE PARTÍCULAS
 // ════════════════════════════════════════════
 
 let contenedorParticulas = null
 
 function iniciarParticulas(datos) {
-    // crear contenedor de partículas
     if (!contenedorParticulas) {
         contenedorParticulas = document.createElement('div')
         contenedorParticulas.id = 'particulas-contenedor'
         contenedorParticulas.style.cssText = `
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 5;
-            overflow: hidden;
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 5; overflow: hidden;
         `
         document.getElementById('pantalla-juego').appendChild(contenedorParticulas)
     }
-
     actualizarParticulas(datos?.bosque?.salud ?? 100, datos?.tipoEvolucion)
 }
 
 function actualizarParticulas(saludBosque, tipo) {
     if (!contenedorParticulas) return
     contenedorParticulas.innerHTML = ''
+    if (estado.particulasInterval) clearInterval(estado.particulasInterval)
 
-    if (estado.particulasInterval) {
-        clearInterval(estado.particulasInterval)
-    }
-
-    // según salud del bosque
     if (saludBosque >= 75) {
-        // bosque sano → mariposas y luciérnagas
         estado.particulasInterval = setInterval(() => {
             crearMariposa()
             if (Math.random() > 0.5) crearLuciernaga()
         }, 800)
     } else if (saludBosque >= 50) {
-        // bosque estable → hojas cayendo
-        estado.particulasInterval = setInterval(() => {
-            crearHoja()
-        }, 600)
+        estado.particulasInterval = setInterval(() => crearHoja(), 600)
     } else if (saludBosque >= 25) {
-        // bosque enfermo → hojas secas
         estado.particulasInterval = setInterval(() => {
             crearHojaSeca()
             if (Math.random() > 0.7) crearHoja()
         }, 400)
     } else {
-        // bosque muerto → cenizas
-        estado.particulasInterval = setInterval(() => {
-            crearCeniza()
-        }, 300)
+        estado.particulasInterval = setInterval(() => crearCeniza(), 300)
     }
 }
 
 function crearMariposa() {
-    const mariposa = document.createElement('div')
-    const emojis   = ['🦋', '🦋', '🌸', '🦋']
-    const emoji    = emojis[Math.floor(Math.random() * emojis.length)]
-    const startX   = Math.random() * window.innerWidth
+    const el = document.createElement('div')
+    const emojis = ['🦋', '🦋', '🌸', '🦋']
     const duration = 6000 + Math.random() * 4000
-
-    mariposa.textContent  = emoji
-    mariposa.style.cssText = `
-        position: absolute;
-        font-size: ${0.8 + Math.random() * 0.8}rem;
-        left: ${startX}px;
-        bottom: -30px;
-        opacity: 0;
-        animation: volarMariposa ${duration}ms ease-in-out forwards;
-        pointer-events: none;
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)]
+    el.style.cssText = `
+        position:absolute; font-size:${0.8 + Math.random() * 0.8}rem;
+        left:${Math.random() * window.innerWidth}px; bottom:-30px;
+        opacity:0; animation:volarMariposa ${duration}ms ease-in-out forwards;
+        pointer-events:none;
     `
-
-    contenedorParticulas.appendChild(mariposa)
-    setTimeout(() => mariposa.remove(), duration)
+    contenedorParticulas.appendChild(el)
+    setTimeout(() => el.remove(), duration)
 }
 
 function crearLuciernaga() {
-    const luciernaga = document.createElement('div')
-    const x = Math.random() * window.innerWidth
-    const y = Math.random() * window.innerHeight
+    const el = document.createElement('div')
     const duration = 3000 + Math.random() * 3000
-
-    luciernaga.style.cssText = `
-        position: absolute;
-        width: 6px;
-        height: 6px;
-        background: radial-gradient(circle, #7fff7f, transparent);
-        border-radius: 50%;
-        left: ${x}px;
-        top: ${y}px;
-        animation: pulsarLuciernaga ${duration}ms ease-in-out forwards;
-        pointer-events: none;
-        box-shadow: 0 0 8px #7fff7f;
+    el.style.cssText = `
+        position:absolute; width:6px; height:6px;
+        background:radial-gradient(circle,#7fff7f,transparent);
+        border-radius:50%; left:${Math.random() * window.innerWidth}px;
+        top:${Math.random() * window.innerHeight}px;
+        animation:pulsarLuciernaga ${duration}ms ease-in-out forwards;
+        pointer-events:none; box-shadow:0 0 8px #7fff7f;
     `
-
-    contenedorParticulas.appendChild(luciernaga)
-    setTimeout(() => luciernaga.remove(), duration)
+    contenedorParticulas.appendChild(el)
+    setTimeout(() => el.remove(), duration)
 }
 
 function crearHoja() {
-    const hoja    = document.createElement('div')
-    const emojis  = ['🍃', '🌿', '🍀']
-    const emoji   = emojis[Math.floor(Math.random() * emojis.length)]
-    const startX  = Math.random() * window.innerWidth
+    const el = document.createElement('div')
+    const emojis = ['🍃', '🌿', '🍀']
     const duration = 4000 + Math.random() * 3000
-
-    hoja.textContent  = emoji
-    hoja.style.cssText = `
-        position: absolute;
-        font-size: ${0.6 + Math.random() * 0.6}rem;
-        left: ${startX}px;
-        top: -20px;
-        opacity: 0.7;
-        animation: caerHoja ${duration}ms ease-in forwards;
-        pointer-events: none;
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)]
+    el.style.cssText = `
+        position:absolute; font-size:${0.6 + Math.random() * 0.6}rem;
+        left:${Math.random() * window.innerWidth}px; top:-20px;
+        opacity:0.7; animation:caerHoja ${duration}ms ease-in forwards;
+        pointer-events:none;
     `
-
-    contenedorParticulas.appendChild(hoja)
-    setTimeout(() => hoja.remove(), duration)
+    contenedorParticulas.appendChild(el)
+    setTimeout(() => el.remove(), duration)
 }
 
 function crearHojaSeca() {
-    const hoja    = document.createElement('div')
-    const emojis  = ['🍂', '🍁', '🍂']
-    const emoji   = emojis[Math.floor(Math.random() * emojis.length)]
-    const startX  = Math.random() * window.innerWidth
+    const el = document.createElement('div')
+    const emojis = ['🍂', '🍁', '🍂']
     const duration = 3000 + Math.random() * 2000
-
-    hoja.textContent  = emoji
-    hoja.style.cssText = `
-        position: absolute;
-        font-size: ${0.6 + Math.random() * 0.8}rem;
-        left: ${startX}px;
-        top: -20px;
-        opacity: 0.6;
-        animation: caerHoja ${duration}ms ease-in forwards;
-        pointer-events: none;
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)]
+    el.style.cssText = `
+        position:absolute; font-size:${0.6 + Math.random() * 0.8}rem;
+        left:${Math.random() * window.innerWidth}px; top:-20px;
+        opacity:0.6; animation:caerHoja ${duration}ms ease-in forwards;
+        pointer-events:none;
     `
-
-    contenedorParticulas.appendChild(hoja)
-    setTimeout(() => hoja.remove(), duration)
+    contenedorParticulas.appendChild(el)
+    setTimeout(() => el.remove(), duration)
 }
 
 function crearCeniza() {
-    const ceniza  = document.createElement('div')
-    const startX  = Math.random() * window.innerWidth
+    const el = document.createElement('div')
     const duration = 4000 + Math.random() * 3000
-
-    ceniza.style.cssText = `
-        position: absolute;
-        width: ${3 + Math.random() * 4}px;
-        height: ${3 + Math.random() * 4}px;
-        background: rgba(150, 100, 100, 0.6);
-        border-radius: 50%;
-        left: ${startX}px;
-        top: -10px;
-        animation: caerHoja ${duration}ms ease-in forwards;
-        pointer-events: none;
+    el.style.cssText = `
+        position:absolute; width:${3 + Math.random() * 4}px;
+        height:${3 + Math.random() * 4}px;
+        background:rgba(150,100,100,0.6); border-radius:50%;
+        left:${Math.random() * window.innerWidth}px; top:-10px;
+        animation:caerHoja ${duration}ms ease-in forwards;
+        pointer-events:none;
     `
-
-    contenedorParticulas.appendChild(ceniza)
-    setTimeout(() => ceniza.remove(), duration)
+    contenedorParticulas.appendChild(el)
+    setTimeout(() => el.remove(), duration)
 }
 
 // ════════════════════════════════════════════
@@ -517,6 +521,10 @@ dom.botonesAccion.forEach(btn => {
 
 async function ejecutarAccion(nombreAccion, btn) {
     btn.disabled = true
+
+    // sonido de la acción
+    Audio_.reproducirEfecto(`/assets/sounds/acciones/${nombreAccion}.mp3`)
+
     try {
         const res  = await fetch(`${API}/accion`, {
             method  : 'POST',
@@ -526,6 +534,15 @@ async function ejecutarAccion(nombreAccion, btn) {
         const data = await res.json()
 
         if (data.exito) {
+            // verificar si hubo evolución
+            const faseAnterior = estado.datosCriatura?.fase
+            const faseNueva    = data.datos?.fase
+
+            if (faseAnterior !== faseNueva) {
+                Audio_.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3')
+                mostrarNotificacion(`✨ ¡${data.datos.nombre} ha evolucionado!`)
+            }
+
             estado.datosCriatura = data.datos
             actualizarJuego(data.datos)
             mostrarNotificacion(data.mensaje)
@@ -581,13 +598,16 @@ function mostrarPantallaFin(tipoFin, nombre) {
     if (estado.tickInterval) clearInterval(estado.tickInterval)
     if (estado.particulasInterval) clearInterval(estado.particulasInterval)
 
+    Audio_.reproducirEfecto('/assets/sounds/eventos/retorno.mp3')
+    Audio_.pausarMusica()
+
     if (tipoFin === 'retorno') {
-        dom.finIcono.textContent  = '✨'
-        dom.finTitulo.textContent = 'El ciclo se completa'
+        dom.finIcono.textContent   = '✨'
+        dom.finTitulo.textContent  = 'El ciclo se completa'
         dom.finMensaje.textContent = `${nombre} ha completado su ciclo y regresa al bosque espiritual.`
     } else {
-        dom.finIcono.textContent  = '💔'
-        dom.finTitulo.textContent = 'El bosque se ha oscurecido'
+        dom.finIcono.textContent   = '💔'
+        dom.finTitulo.textContent  = 'El bosque se ha oscurecido'
         dom.finMensaje.textContent = `${nombre} no pudo completar su ciclo. El bosque lo recuerda.`
     }
     mostrarPantalla('fin')
@@ -595,9 +615,11 @@ function mostrarPantallaFin(tipoFin, nombre) {
 
 dom.btnReiniciar.addEventListener('click', async () => {
     try { await fetch(`${API}/reiniciar`, { method: 'DELETE' }) } catch(e) {}
-    estado.datosCriatura = null
-    dom.inputNombre.value = ''
+    estado.datosCriatura   = null
+    estado.estadoAnterior  = null
+    dom.inputNombre.value  = ''
     if (contenedorParticulas) contenedorParticulas.innerHTML = ''
+    Audio_.pausarMusica()
     mostrarPantalla('crear')
 })
 
@@ -618,6 +640,7 @@ async function inicializar() {
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
             iniciarParticulas(data.datos)
+            Audio_.reproducirMusica(Audio_.getMusicaBosque(data.datos.bosque?.salud ?? 100))
         }
     } catch (error) {
         console.log('No hay criatura activa, mostrando intro')
