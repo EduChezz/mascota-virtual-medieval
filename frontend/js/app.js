@@ -4,7 +4,7 @@
 // + Imágenes reales + Animaciones de partículas
 // ============================================
 
-const API = 'https://mascota-virtual-medieval.onrender.com/api/mascota'
+const API = 'http://localhost:3000/api/mascota'
 
 // ════════════════════════════════════════════
 // ESTADO LOCAL
