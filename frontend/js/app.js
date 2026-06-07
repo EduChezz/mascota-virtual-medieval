@@ -471,9 +471,27 @@ const Huevo = {
     },
 
     init() {
-        this.calor = 0
-        this.listo = false
+        this.calor           = 0
+        this.listo           = false
         this.countdownActivo = false
+        this._ultimoClick    = null
+
+        // usar imagen real del huevo
+        const sprite = this.elementos.sprite
+        if (sprite) {
+            sprite.innerHTML  = ''
+            sprite.style.fontSize = 'unset'
+            const img = document.createElement('img')
+            img.src   = '/assets/images/criatura/huevo.png'
+            img.style.cssText = `
+                width      : 180px;
+                height     : 180px;
+                object-fit : contain;
+                filter     : drop-shadow(0 0 20px rgba(200, 169, 110, 0.5));
+            `
+            sprite.appendChild(img)
+        }
+
         this.actualizarUI()
         this.iniciarBajadaAutomatica()
     },
@@ -481,11 +499,21 @@ const Huevo = {
     calentar() {
         if (this.listo) return
 
-        // subida según velocidad de click
-        const incremento = this.calor > 66 ? 6 : 8
+        // subida según nivel actual
+        let incremento = 4
+        if (this.calor >= 67)      incremento = 2
+        else if (this.calor >= 34) incremento = 3
+
+        // bonus por click rápido
+        const ahora = Date.now()
+        if (this._ultimoClick && (ahora - this._ultimoClick) < 400) {
+            incremento += 1
+        }
+        this._ultimoClick = ahora
+
         this.calor = Math.min(this.maxCalor, this.calor + incremento)
 
-        // efecto visual en el botón
+        // efecto visual botón
         this.elementos.btnCalentar.style.transform = 'scale(0.95)'
         setTimeout(() => {
             if (this.elementos.btnCalentar) {
@@ -493,15 +521,10 @@ const Huevo = {
             }
         }, 100)
 
-        // crear partícula de calor
         this.crearParticulaCalor()
-
-        // sonido
-        GestorAudio.reproducirEfecto('/assets/sounds/acciones/alimentar.mp3', 1000)
-
+        GestorAudio.reproducirEfecto('/assets/sounds/acciones/alimentar.mp3', 500)
         this.actualizarUI()
 
-        // verificar si llegó al máximo
         if (this.calor >= this.maxCalor && !this.countdownActivo) {
             this.iniciarCountdown()
         }
@@ -512,8 +535,8 @@ const Huevo = {
         const e = this.elementos
 
         // actualizar barra
-        e.barra.style.width       = `${p}%`
-        e.porcentaje.textContent  = `${Math.round(p)}%`
+        e.barra.style.width      = `${p}%`
+        e.porcentaje.textContent = `${Math.round(p)}%`
 
         // color de la barra según temperatura
         e.barra.className = 'calor-barra'
@@ -521,57 +544,75 @@ const Huevo = {
         else if (p >= 67) e.barra.classList.add('caliente')
         else if (p >= 34) e.barra.classList.add('tibio')
 
-        // estado del huevo
-        e.sprite.className = 'huevo-animado'
+        // actualizar imagen del huevo según temperatura
+        const img = e.sprite?.querySelector('img')
+        if (img) {
+            if (p >= 100) {
+                img.style.filter = 'drop-shadow(0 0 40px rgba(255,215,100,0.9)) brightness(1.5)'
+                img.style.animation = 'vibrar 0.1s ease-in-out infinite'
+            } else if (p >= 67) {
+                img.style.filter = 'drop-shadow(0 0 25px rgba(226,74,74,0.8)) brightness(1.3) hue-rotate(-20deg)'
+                img.style.animation = 'vibrar 0.2s ease-in-out infinite'
+            } else if (p >= 34) {
+                img.style.filter = 'drop-shadow(0 0 15px rgba(226,144,74,0.6)) brightness(1.1) hue-rotate(10deg)'
+                img.style.animation = 'flotar 2s ease-in-out infinite'
+            } else {
+                img.style.filter = 'drop-shadow(0 0 10px rgba(74,144,226,0.4)) brightness(0.9) hue-rotate(180deg)'
+                img.style.animation = 'flotar 3s ease-in-out infinite'
+            }
+        }
+
+        // aura según temperatura
         if (p >= 100) {
-            e.sprite.classList.add('huevo-maximo')
+            e.aura.style.background = 'radial-gradient(circle, rgba(255,215,100,0.6) 0%, transparent 70%)'
             e.btnCalentar.classList.add('maximo')
             e.mensaje.textContent = this.mensajes.maximo
-            e.aura.style.background = 'radial-gradient(circle, rgba(255,215,100,0.5) 0%, transparent 70%)'
         } else if (p >= 67) {
-            e.sprite.classList.add('huevo-caliente')
+            e.aura.style.background = 'radial-gradient(circle, rgba(226,74,74,0.5) 0%, transparent 70%)'
             e.btnCalentar.classList.remove('maximo')
             e.mensaje.textContent = this.mensajes.caliente
-            e.aura.style.background = 'radial-gradient(circle, rgba(226,74,74,0.4) 0%, transparent 70%)'
         } else if (p >= 34) {
-            e.sprite.classList.add('huevo-tibio')
+            e.aura.style.background = 'radial-gradient(circle, rgba(226,144,74,0.3) 0%, transparent 70%)'
             e.btnCalentar.classList.remove('maximo')
             e.mensaje.textContent = this.mensajes.tibio
-            e.aura.style.background = 'radial-gradient(circle, rgba(226,144,74,0.3) 0%, transparent 70%)'
         } else {
-            e.sprite.classList.add('huevo-frio')
+            e.aura.style.background = 'radial-gradient(circle, rgba(74,144,226,0.2) 0%, transparent 70%)'
             e.btnCalentar.classList.remove('maximo')
             e.mensaje.textContent = this.mensajes.frio
-            e.aura.style.background = 'radial-gradient(circle, rgba(74,144,226,0.2) 0%, transparent 70%)'
         }
     },
 
     iniciarBajadaAutomatica() {
         if (this.intervalBajada) clearInterval(this.intervalBajada)
         this.intervalBajada = setInterval(() => {
-            if (this.listo || this.countdownActivo) return
+            if (this.listo) return
+            if (this.countdownActivo && this.calor >= this.maxCalor) return
 
-            // bajada según nivel de calor
-            let bajada = 3
-            if (this.calor >= 67) bajada = 1
-            else if (this.calor >= 34) bajada = 2
+            // si estaba en countdown pero bajó del 100%
+            if (this.countdownActivo && this.calor < this.maxCalor) {
+                this.countdownActivo = false
+                clearInterval(this.intervalCountdown)
+                this.elementos.countdown.textContent = ''
+            }
+
+            let bajada = 5
+            if (this.calor >= 67)      bajada = 2
+            else if (this.calor >= 34) bajada = 3
 
             this.calor = Math.max(0, this.calor - bajada)
             this.actualizarUI()
-        }, 1000)
+        }, 800)   // ← cada 0.8 segundos
     },
 
     iniciarCountdown() {
-        this.countdownActivo  = true
-        this.countdownValor   = 3
+        this.countdownActivo = true
+        this.countdownValor  = 5   // ← 5 segundos
         const e = this.elementos
         e.countdown.textContent = `${this.countdownValor}...`
 
-        // sonido épico
-        GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 4000)
+        GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 6000)
 
         this.intervalCountdown = setInterval(() => {
-            // verificar que el calor sigue al 100%
             if (this.calor < this.maxCalor) {
                 this.countdownActivo = false
                 e.countdown.textContent = ''
@@ -598,8 +639,9 @@ const Huevo = {
         const e = this.elementos
 
         // animación de eclosión
-        e.sprite.style.animation = 'eclosion 1s ease forwards'
-        e.aura.style.animation   = 'eclosion 1.2s ease forwards'
+        const img = e.sprite.querySelector('img')
+        if (img) img.style.animation = 'eclosion 1s ease forwards'
+        e.aura.style.animation = 'eclosion 1.2s ease forwards'
 
         // luz de nacimiento
         const luz = document.getElementById('nacimiento-luz')
@@ -608,10 +650,11 @@ const Huevo = {
             setTimeout(() => luz.classList.remove('activa'), 1000)
         }
 
-        // sonido de nacimiento
+        // música de nacimiento — más lógico aquí
+        GestorAudio.reproducirEvento('/assets/sounds/eventos/nacimiento.mp3', 4000)
         setTimeout(() => {
-            GestorAudio.reproducirEvento('/assets/sounds/eventos/nacimiento.mp3', 3000)
-        }, 500)
+            GestorAudio.reproducirMusica('/assets/sounds/ambiente/bosque_sano.mp3')
+        }, 4500)
 
         // mostrar fase de nombre
         setTimeout(() => {
