@@ -233,7 +233,8 @@ body {
     height         : 180px;
     object-fit     : contain;
     animation      : flotar 3s ease-in-out infinite;
-    mix-blend-mode : multiply;
+    mix-blend-mode : screen;
+    background     : transparent;
 }
 .criatura-sombra {
     position      : absolute;
