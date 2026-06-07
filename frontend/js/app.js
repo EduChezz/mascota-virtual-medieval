@@ -834,13 +834,18 @@ dom.btnCrear.addEventListener('click', async () => {
             estado.datosCriatura = data.datos
             mostrarNotificacion(`¡${nombre} ha despertado del huevo espiritual!`)
             setTimeout(() => {
+                // detener TODO antes de entrar al juego
+                GestorAudio.detenerTodo()
                 mostrarPantalla('juego')
                 actualizarJuego(data.datos)
                 iniciarTickAutomatico()
                 iniciarParticulas(data.datos)
-                GestorAudio.reproducirMusica(
-                    GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
-                )
+                // música del juego limpia
+                setTimeout(() => {
+                    GestorAudio.reproducirMusica(
+                        GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
+                    )
+                }, 500)
                 Huevo.reset()
             }, 1000)
         } else {
@@ -867,12 +872,14 @@ dom.inputNombre.addEventListener('keypress', (e) => {
 // CARGAR ESTADO
 // ════════════════════════════════════════════
 
+
 async function cargarEstado() {
     try {
         const res  = await fetch(`${API}/estado`)
         const data = await res.json()
         if (data.exito) {
             estado.datosCriatura = data.datos
+            GestorAudio.detenerTodo()
             mostrarPantalla('juego')
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
@@ -892,6 +899,14 @@ async function cargarEstado() {
 
 function actualizarJuego(datos) {
     if (!datos) return
+
+    // detener todo audio anterior al entrar al juego
+    if (estado.pantalla === 'juego' && !GestorAudio.canales.musica) {
+        GestorAudio.detenerTodo()
+        GestorAudio.reproducirMusica(
+            GestorAudio.getMusicaBosque(datos.bosque?.salud ?? 100)
+        )
+    }
 
     const { nombre, fase, tipoEvolucion, estado: est,
             estadisticas, bosque, diasVividos, imagenActual } = datos
@@ -1240,6 +1255,7 @@ async function inicializar() {
         const data = await res.json()
         if (data.exito) {
             estado.datosCriatura = data.datos
+            GestorAudio.detenerTodo()
             mostrarPantalla('juego')
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
@@ -1323,6 +1339,7 @@ async function inicializar() {
             pantallaTitulo.classList.remove('activa')
 
             estado.datosCriatura = data.datos
+            GestorAudio.detenerTodo()
             mostrarPantalla('juego')
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
