@@ -228,14 +228,21 @@ body {
     align-items     : center;
     justify-content : center;
 }
+
 .criatura-sprite img {
     width          : 180px;
     height         : 180px;
     object-fit     : contain;
     animation      : flotar 3s ease-in-out infinite;
-    mix-blend-mode : screen;
-    background     : transparent;
+    mix-blend-mode : luminosity;
+    isolation      : isolate;
 }
+
+.criatura-contenedor {
+    background : transparent;
+    isolation  : isolate;
+}
+
 .criatura-sombra {
     position      : absolute;
     bottom        : -20px;
