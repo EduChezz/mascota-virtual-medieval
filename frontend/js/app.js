@@ -703,9 +703,22 @@ const Huevo = {
         // PASO 4 → quitar flash
         setTimeout(() => flash.remove(), 1500)
 
-        // PASO 5 → bosque_sano.mp3 fade in suave
+        // PASO 5 → detener TODO y arrancar bosque_sano limpio
         setTimeout(() => {
-            GestorAudio.reproducirMusica('/assets/sounds/ambiente/bosque_sano.mp3')
+            // detener efecto si sigue sonando
+            if (GestorAudio.canales.efecto) {
+                GestorAudio.canales.efecto.pause()
+                GestorAudio.canales.efecto = null
+            }
+            // detener música anterior si sigue
+            if (GestorAudio.canales.musica) {
+                GestorAudio.canales.musica.pause()
+                GestorAudio.canales.musica = null
+            }
+            // arrancar bosque_sano limpio
+            setTimeout(() => {
+                GestorAudio.reproducirMusica('/assets/sounds/ambiente/bosque_sano.mp3')
+            }, 300)
         }, 1200)
 
         // PASO 6 → mostrar formulario nombre
