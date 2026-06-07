@@ -17,23 +17,23 @@ const MODOS = {
     normal : {
         nombre    : 'Normal',
         cooldowns : {
-            alimentar : 7200,   // 2 horas
-            jugar     : 3600,   // 1 hora
-            dormir    : 28800,  // 8 horas
-            bañar     : 14400,  // 4 horas
-            meditar   : 21600,  // 6 horas
-            hablar    : 1800    // 30 minutos
+            alimentar : 30,    // 30 segundos
+            jugar     : 30,    // 30 segundos
+            dormir    : 30,    // 30 segundos
+            bañar     : 30,    // 30 segundos
+            meditar   : 30,    // 30 segundos
+            hablar    : 30     // 30 segundos
         }
     },
     demo : {
         nombre    : 'Demo',
         cooldowns : {
-            alimentar : 120,   // 2 minutos
-            jugar     : 60,    // 1 minuto
-            dormir    : 240,   // 4 minutos
-            bañar     : 180,   // 3 minutos
-            meditar   : 180,   // 3 minutos
-            hablar    : 30     // 30 segundos
+            alimentar : 5,    // 5 segundos
+            jugar     : 5,    // 5 segundos
+            dormir    : 5,    // 5 segundos
+            bañar     : 5,    // 5 segundos
+            meditar   : 5,    // 5 segundos
+            hablar    : 5     // 5 segundos
         }
     }
 }

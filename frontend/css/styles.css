@@ -230,8 +230,8 @@ body {
 }
 
 .criatura-sprite img {
-    width          : 180px;
-    height         : 180px;
+    width          : 280px;
+    height         : 280px;
     object-fit     : contain;
     animation      : flotar 3s ease-in-out infinite;
     mix-blend-mode : luminosity;
