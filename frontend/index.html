@@ -8,6 +8,63 @@
 </head>
 <body>
 
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANTALLA TÍTULO — Pantalla de inicio  -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="pantalla-titulo" class="pantalla activa">
+
+        <!-- video de fondo -->
+        <video
+            id="video-fondo"
+            class="titulo-video"
+            autoplay
+            muted
+            loop
+            playsinline
+            src="/assets/images/bosque_titulo.mp4">
+        </video>
+
+        <!-- overlay oscuro -->
+        <div class="titulo-overlay"></div>
+
+        <!-- partículas -->
+        <div class="titulo-particulas" id="titulo-particulas"></div>
+
+        <!-- contenido central -->
+        <div class="titulo-contenido">
+
+            <!-- logo medieval -->
+            <div class="titulo-logo-contenedor">
+                <img
+                    src="/assets/images/logo_medieval.png"
+                    alt="El Juramento del Bosque Vivo"
+                    class="titulo-logo"
+                >
+            </div>
+
+            <!-- subtítulo -->
+            <p class="titulo-subtitulo">
+                "Que el amor que se da a los seres vivos<br>
+                no desaparezca… que tome forma."
+            </p>
+
+            <!-- botón comenzar -->
+            <button class="btn-comenzar-juego" id="btn-titulo-comenzar">
+                <span class="btn-comenzar-icono">🌿</span>
+                <span class="btn-comenzar-texto">Comenzar el Juego</span>
+                <span class="btn-comenzar-brillo"></span>
+            </button>
+
+            <!-- créditos pequeños -->
+            <p class="titulo-creditos">
+                Universidad Técnica de Ambato · POO 2026
+            </p>
+
+        </div>
+
+    </div>
+
     <!-- ══════════════════════════════════════ -->
     <!-- PANTALLA INTRO — Historia del sabio   -->
     <!-- ══════════════════════════════════════ -->

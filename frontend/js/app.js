@@ -6,6 +6,9 @@
 
 const API = 'https://mascota-virtual-medieval.onrender.com/api/mascota'
 
+// ── Agregar pantalla título al objeto dom ──
+// (agregar dentro del objeto dom existente)
+
 // ════════════════════════════════════════════
 // CONFIGURACIÓN DE MODOS
 // ════════════════════════════════════════════
@@ -350,7 +353,12 @@ const dom = {
     finIcono    : document.getElementById('fin-icono'),
     finTitulo   : document.getElementById('fin-titulo'),
     finMensaje  : document.getElementById('fin-mensaje'),
-    btnReiniciar: document.getElementById('btn-reiniciar')
+    btnReiniciar: document.getElementById('btn-reiniciar'),
+    btnTituloComenzar : document.getElementById('btn-titulo-comenzar'),
+    pantallaTitulo    : document.getElementById('pantalla-titulo'),
+    tituloParticulas  : document.getElementById('titulo-particulas')
+
+
 }
 
 // ════════════════════════════════════════════
@@ -874,6 +882,91 @@ async function inicializar() {
         }
     } catch (error) {
         console.log('No hay criatura activa, mostrando intro')
+    }
+}
+
+// ════════════════════════════════════════════
+// PANTALLA TÍTULO
+// ════════════════════════════════════════════
+
+function iniciarParticulasTitulo() {
+    if (!dom.tituloParticulas) return
+
+    setInterval(() => {
+        const el       = document.createElement('div')
+        const emojis   = ['🦋', '🌸', '✨', '🍃', '🌿']
+        const emoji    = emojis[Math.floor(Math.random() * emojis.length)]
+        const startX   = Math.random() * window.innerWidth
+        const duration = 5000 + Math.random() * 5000
+
+        el.textContent = emoji
+        el.style.cssText = `
+            position   : absolute;
+            font-size  : ${0.6 + Math.random() * 1}rem;
+            left       : ${startX}px;
+            bottom     : -30px;
+            opacity    : 0;
+            animation  : volarMariposa ${duration}ms ease-in-out forwards;
+            pointer-events : none;
+        `
+        dom.tituloParticulas.appendChild(el)
+        setTimeout(() => el.remove(), duration)
+    }, 600)
+}
+
+// botón comenzar juego
+document.getElementById('btn-titulo-comenzar').addEventListener('click', () => {
+
+    // arrancar música con interacción del usuario
+    GestorAudio.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
+
+    // ocultar pantalla título con fade
+    const pantallaTitulo = document.getElementById('pantalla-titulo')
+    pantallaTitulo.style.transition = 'opacity 1s ease'
+    pantallaTitulo.style.opacity    = '0'
+
+    setTimeout(() => {
+        pantallaTitulo.style.display = 'none'
+        pantallaTitulo.classList.remove('activa')
+        // mostrar intro
+        iniciarIntro()
+        mostrarPantalla('intro')
+    }, 1000)
+})
+
+// ════════════════════════════════════════════
+// INICIALIZACIÓN
+// ════════════════════════════════════════════
+
+async function inicializar() {
+
+    // iniciar partículas de la pantalla título
+    iniciarParticulasTitulo()
+
+    // verificar si ya existe una criatura activa
+    try {
+        const res  = await fetch(`${API}/estado`)
+        const data = await res.json()
+
+        if (data.exito) {
+            // hay criatura activa → saltar título e ir directo al juego
+            const pantallaTitulo = document.getElementById('pantalla-titulo')
+            pantallaTitulo.style.display = 'none'
+            pantallaTitulo.classList.remove('activa')
+
+            estado.datosCriatura = data.datos
+            mostrarPantalla('juego')
+            actualizarJuego(data.datos)
+            iniciarTickAutomatico()
+            iniciarParticulas(data.datos)
+            GestorAudio.reproducirMusica(
+                GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
+            )
+        }
+        // si no hay criatura → se queda en pantalla título
+    } catch (error) {
+        // no hay criatura → mostrar pantalla título normalmente
+        console.log('Mostrando pantalla título')
     }
 }
 
