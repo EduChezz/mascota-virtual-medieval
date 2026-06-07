@@ -476,6 +476,10 @@ const Huevo = {
         this.countdownActivo = false
         this._ultimoClick    = null
 
+        // música de fondo del huevo → nacimiento.mp3
+
+        GestorAudio.reproducirMusica('/assets/sounds/eventos/nacimiento.mp3')
+
         // usar imagen real del huevo
         const sprite = this.elementos.sprite
         if (sprite) {
@@ -606,17 +610,21 @@ const Huevo = {
 
     iniciarCountdown() {
         this.countdownActivo = true
-        this.countdownValor  = 5   // ← 5 segundos
+        this.countdownValor  = 5
         const e = this.elementos
-        e.countdown.textContent = `${this.countdownValor}...`
 
+        // cuando empieza el countdown → evolucion.mp3
         GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 6000)
+
+        e.countdown.textContent = `${this.countdownValor}...`
 
         this.intervalCountdown = setInterval(() => {
             if (this.calor < this.maxCalor) {
                 this.countdownActivo = false
                 e.countdown.textContent = ''
                 clearInterval(this.intervalCountdown)
+                // volver a música de nacimiento
+                GestorAudio.reproducirMusica('/assets/sounds/eventos/nacimiento.mp3')
                 return
             }
 
@@ -638,30 +646,58 @@ const Huevo = {
 
         const e = this.elementos
 
-        // animación de eclosión
-        const img = e.sprite.querySelector('img')
-        if (img) img.style.animation = 'eclosion 1s ease forwards'
-        e.aura.style.animation = 'eclosion 1.2s ease forwards'
+        // PASO 1 → Flash de luz blanca intensa
+        const flash = document.createElement('div')
+        flash.style.cssText = `
+            position   : fixed;
+            inset      : 0;
+            background : white;
+            opacity    : 0;
+            z-index    : 999;
+            transition : opacity 0.3s ease;
+            pointer-events : none;
+        `
+        document.body.appendChild(flash)
 
-        // luz de nacimiento
-        const luz = document.getElementById('nacimiento-luz')
-        if (luz) {
-            luz.classList.add('activa')
-            setTimeout(() => luz.classList.remove('activa'), 1000)
-        }
+        // activar flash
+        setTimeout(() => flash.style.opacity = '1', 50)
 
-        // música de nacimiento — más lógico aquí
-        GestorAudio.reproducirEvento('/assets/sounds/eventos/nacimiento.mp3', 4000)
+        // PASO 2 → evolucion.mp3 en el flash
+        GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 3000)
+
+        // PASO 3 → Flash desaparece, aparece el bosque
+        setTimeout(() => {
+            flash.style.transition = 'opacity 0.8s ease'
+            flash.style.opacity    = '0'
+
+            // cambiar fondo a bosque
+            const fondo = document.querySelector('.crear-fondo')
+            if (fondo) {
+                fondo.style.filter     = 'brightness(0.7)'
+                fondo.style.transition = 'filter 1s ease'
+            }
+
+            // partículas doradas
+            _lanzarParticulasEclosion()
+
+        }, 400)
+
+        // PASO 4 → quitar flash del DOM
+        setTimeout(() => {
+            flash.remove()
+        }, 1500)
+
+        // PASO 5 → música bosque_sano después de la eclosión
         setTimeout(() => {
             GestorAudio.reproducirMusica('/assets/sounds/ambiente/bosque_sano.mp3')
-        }, 4500)
+        }, 2000)
 
-        // mostrar fase de nombre
+        // PASO 6 → mostrar fase de nombre
         setTimeout(() => {
             document.getElementById('fase-calentamiento').classList.add('oculto')
             document.getElementById('fase-nombre').classList.remove('oculto')
             e.countdown.textContent = ''
-        }, 1500)
+        }, 1800)
     },
 
     crearParticulaCalor() {
@@ -698,6 +734,36 @@ const Huevo = {
         document.getElementById('fase-calentamiento')?.classList.remove('oculto')
         document.getElementById('fase-nombre')?.classList.add('oculto')
         this.actualizarUI()
+    }
+}
+
+function _lanzarParticulasEclosion() {
+    const contenedor = document.getElementById('calor-particulas')
+    if (!contenedor) return
+
+    const emojis = ['✨', '🌟', '💫', '⭐', '🌿', '🍃']
+
+    for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+            const el       = document.createElement('div')
+            const emoji    = emojis[Math.floor(Math.random() * emojis.length)]
+            const x        = Math.random() * 100
+            const duration = 1500 + Math.random() * 2000
+
+            el.textContent = emoji
+            el.style.cssText = `
+                position       : fixed;
+                font-size      : ${0.8 + Math.random() * 1.5}rem;
+                left           : ${x}vw;
+                bottom         : -30px;
+                opacity        : 0.9;
+                animation      : volarMariposa ${duration}ms ease-out forwards;
+                pointer-events : none;
+                z-index        : 100;
+            `
+            contenedor.appendChild(el)
+            setTimeout(() => el.remove(), duration)
+        }, i * 80)
     }
 }
 
