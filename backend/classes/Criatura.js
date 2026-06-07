@@ -189,22 +189,28 @@ export class Criatura {
 
     // imagen correcta según fase + tipo + estado
     getImagenActual() {
-        const estado = this.estadoActual?.getNombre() || 'paz'
-        const tipo   = this.tipoEvolucion || 'base'
+        const estadoNombre = this.estadoActual?.getNombre() || 'paz'
+        const tipo         = this.tipoEvolucion || 'base'
 
         if (this.fase === 'huevo') {
             return '/assets/images/criatura/huevo.png'
         }
 
         if (this.fase === 'base') {
+            const estadoBase = ['paz','alegre','triste','peligro','hambriento','somnoliento']
+            const estado     = estadoBase.includes(estadoNombre) ? estadoNombre : 'paz'
             return `/assets/images/criatura/sylvae_base_${estado}.png`
         }
 
         if (this.fase === 'evolucionada') {
+            const estadosValidos = ['paz','alegre','triste','peligro']
+            const estado         = estadosValidos.includes(estadoNombre) ? estadoNombre : 'paz'
             return `/assets/images/criatura/sylvae_${tipo}_${estado}.png`
         }
 
         if (this.fase === 'retorno') {
+            const estadosRetorno = ['paz','alegre','triste','final']
+            const estado         = estadosRetorno.includes(estadoNombre) ? estadoNombre : 'paz'
             return `/assets/images/criatura/sylvae_retorno_${estado}.png`
         }
 
