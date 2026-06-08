@@ -2,17 +2,6 @@
 // CLASE: Criatura
 // Núcleo principal del juego
 // Implementa: State, Observer, Strategy
-//
-// FASES DE VIDA:
-// huevo → base → evolucionada → retorno
-//
-// TIPOS DE EVOLUCIÓN (día 6):
-// natura  → vínculo > 70
-// umbra   → energía > 70
-// ignis   → espíritu > 70
-// aqua    → vitalidad > 70
-// aether  → todo equilibrado > 60
-// umbris  → negligencia general
 // ============================================
 
 import { Estadisticas }  from './Estadisticas.js'
@@ -23,13 +12,15 @@ export class Criatura {
     constructor(nombre) {
         this.nombre          = nombre
         this.fase            = 'huevo'
-        this.tipoEvolucion   = null      // se determina en día 6
+        this.tipoEvolucion   = null
         this.diasVividos     = 0
         this.diasMaximos     = 15
         this.estadisticas    = new Estadisticas()
         this.estadoActual    = null
         this.observadores    = []
         this.createdAt       = new Date()
+        this._logrosObtenidos   = []
+        this._contadorAcciones  = {}
         this._actualizarEstado()
     }
 
@@ -90,7 +81,8 @@ export class Criatura {
             resultado
         })
 
-        return { exito: true, resultado }
+        const logros = this._verificarLogros(accion.getNombre())
+        return { exito: true, resultado, logros }
     }
 
     // ════════════════════════════════════════
@@ -100,13 +92,11 @@ export class Criatura {
     _determinarEvolucion() {
         const s = this.estadisticas.toObject()
 
-        // Aether → todo equilibrado > 60
         if (s.vitalidad > 60 && s.espiritu > 60 &&
             s.energia > 60   && s.vinculo > 60 && s.hambre < 40) {
             return 'aether'
         }
 
-        // encontrar la estadística dominante
         const puntuaciones = {
             natura  : s.vinculo,
             umbra   : s.energia,
@@ -117,17 +107,11 @@ export class Criatura {
         const dominante = Object.entries(puntuaciones)
             .sort((a, b) => b[1] - a[1])[0]
 
-        // si la dominante supera 70 → evoluciona a ese tipo
-        if (dominante[1] > 70) {
-            return dominante[0]
-        }
-
-        // si ninguna supera 70 → umbris (negligencia)
+        if (dominante[1] > 70) return dominante[0]
         return 'umbris'
     }
 
     _evaluarEvolucion() {
-        // día 1 → huevo a base
         if (this.diasVividos === 1 && this.fase === 'huevo') {
             this.fase = 'base'
             this._notificarObservadores('evolucion', {
@@ -138,7 +122,6 @@ export class Criatura {
             return
         }
 
-        // día 6 → base a forma evolucionada
         if (this.diasVividos === 6 && this.fase === 'base') {
             this.tipoEvolucion = this._determinarEvolucion()
             this.fase          = 'evolucionada'
@@ -150,7 +133,6 @@ export class Criatura {
             return
         }
 
-        // día 15 → retorno
         if (this.diasVividos >= this.diasMaximos) {
             this.fase = 'retorno'
             this._notificarObservadores('evolucion', {
@@ -187,7 +169,6 @@ export class Criatura {
     getEstado()        { return this.estadoActual  }
     getEstadisticas()  { return this.estadisticas  }
 
-    // imagen correcta según fase + tipo + estado
     getImagenActual() {
         const estadoNombre = this.estadoActual?.getNombre() || 'paz'
         const tipo         = this.tipoEvolucion || 'base'
@@ -217,24 +198,90 @@ export class Criatura {
         return '/assets/images/criatura/huevo.png'
     }
 
-    // ════════════════════════════════════════════
+    // ════════════════════════════════════════
+    // SISTEMA DE MINI-LOGROS
+    // ════════════════════════════════════════
+
+    _verificarLogros(accionEjecutada) {
+        const logros = []
+        const stats  = this.estadisticas.toObject()
+
+        this._contadorAcciones[accionEjecutada] =
+            (this._contadorAcciones[accionEjecutada] || 0) + 1
+
+        const h = this._contadorAcciones
+
+        if (stats.vinculo >= 100 && !this._logrosObtenidos.includes('vinculo_max')) {
+            logros.push({ icono: '💚', titulo: '¡Vínculo Eterno!', mensaje: 'Has alcanzado el vínculo máximo con Sylvae.' })
+            this._registrarLogro('vinculo_max')
+        }
+
+        if (stats.vitalidad >= 100 && stats.hambre === 0 && !this._logrosObtenidos.includes('perfecto')) {
+            logros.push({ icono: '⭐', titulo: '¡Cuidado Perfecto!', mensaje: 'Sylvae está en condiciones perfectas.' })
+            this._registrarLogro('perfecto')
+        }
+
+        if (stats.espiritu >= 100 && !this._logrosObtenidos.includes('espiritu_max')) {
+            logros.push({ icono: '✨', titulo: '¡Espíritu Pleno!', mensaje: 'El espíritu de Sylvae brilla al máximo.' })
+            this._registrarLogro('espiritu_max')
+        }
+
+        if ((h['meditar'] || 0) >= 5 && !this._logrosObtenidos.includes('meditador')) {
+            logros.push({ icono: '🌿', titulo: '¡Meditador del Bosque!', mensaje: '5 meditaciones completadas con Sylvae.' })
+            this._registrarLogro('meditador')
+        }
+
+        if ((h['jugar'] || 0) >= 5 && !this._logrosObtenidos.includes('companero')) {
+            logros.push({ icono: '🎵', titulo: '¡Compañero Fiel!', mensaje: 'Has jugado 5 veces con Sylvae.' })
+            this._registrarLogro('companero')
+        }
+
+        if ((h['hablar'] || 0) >= 10 && !this._logrosObtenidos.includes('conversador')) {
+            logros.push({ icono: '💬', titulo: '¡El Gran Conversador!', mensaje: 'Has hablado 10 veces con Sylvae.' })
+            this._registrarLogro('conversador')
+        }
+
+        if (this.diasVividos >= 5 && !this._logrosObtenidos.includes('dia5')) {
+            logros.push({ icono: '📅', titulo: '¡5 Días de Vínculo!', mensaje: 'Sylvae lleva 5 días contigo.' })
+            this._registrarLogro('dia5')
+        }
+
+        if (this.diasVividos >= 10 && !this._logrosObtenidos.includes('dia10')) {
+            logros.push({ icono: '🌟', titulo: '¡10 Días Juntos!', mensaje: 'Un vínculo que el bosque nunca olvidará.' })
+            this._registrarLogro('dia10')
+        }
+
+        if (this.fase === 'evolucionada' && this.tipoEvolucion === 'aether'
+            && !this._logrosObtenidos.includes('aether')) {
+            logros.push({ icono: '👑', titulo: '¡Sylvae Aether!', mensaje: 'Has alcanzado la evolución perfecta.' })
+            this._registrarLogro('aether')
+        }
+
+        return logros
+    }
+
+    _registrarLogro(id) {
+        if (!this._logrosObtenidos.includes(id)) {
+            this._logrosObtenidos.push(id)
+        }
+    }
+
+    // ════════════════════════════════════════
     // RESUMEN FINAL DEL CICLO
-    // ════════════════════════════════════════════
+    // ════════════════════════════════════════
 
     _generarResumen() {
         const stats  = this.estadisticas.toObject()
         const estado = this.estadoActual?.getNombre()
 
-        // estadística más alta
         const logros = [
-            { nombre: 'Guardián del Bosque',  valor: stats.vinculo,   icono: '💚' },
-            { nombre: 'Espíritu Nocturno',    valor: stats.energia,   icono: '🌙' },
-            { nombre: 'Llama Eterna',         valor: stats.espiritu,  icono: '🔥' },
-            { nombre: 'Fuerza Vital',         valor: stats.vitalidad, icono: '❤️' }
+            { nombre: 'Guardián del Bosque', valor: stats.vinculo,   icono: '💚' },
+            { nombre: 'Espíritu Nocturno',   valor: stats.energia,   icono: '🌙' },
+            { nombre: 'Llama Eterna',        valor: stats.espiritu,  icono: '🔥' },
+            { nombre: 'Fuerza Vital',        valor: stats.vitalidad, icono: '❤️' }
         ]
         const logroMaximo = logros.sort((a, b) => b.valor - a.valor)[0]
 
-        // mensaje según tipo de evolución
         const mensajes = {
             natura  : 'El bosque florecerá donde camines. Tu vínculo con la vida es eterno.',
             umbra   : 'Las estrellas te guiarán siempre. Tu espíritu brilla en la oscuridad.',
@@ -287,12 +334,14 @@ export class Criatura {
 
     static fromObject(obj) {
         const c = new Criatura(obj.nombre)
-        c.fase           = obj.fase
-        c.tipoEvolucion  = obj.tipoEvolucion || null
-        c.diasVividos    = obj.diasVividos
-        c.diasMaximos    = obj.diasMaximos
-        c.estadisticas   = Estadisticas.fromObject(obj.estadisticas)
-        c.createdAt      = obj.createdAt
+        c.fase                = obj.fase
+        c.tipoEvolucion       = obj.tipoEvolucion || null
+        c.diasVividos         = obj.diasVividos
+        c.diasMaximos         = obj.diasMaximos
+        c.estadisticas        = Estadisticas.fromObject(obj.estadisticas)
+        c.createdAt           = obj.createdAt
+        c._logrosObtenidos    = obj.logrosObtenidos || []
+        c._contadorAcciones   = obj.contadorAcciones || {}
         c._actualizarEstado()
         return c
     }
