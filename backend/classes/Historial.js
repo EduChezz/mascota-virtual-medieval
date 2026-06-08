@@ -75,7 +75,8 @@ export class Historial {
                     dia      : datos.diasVividos,
                     criatura : criatura.getNombre(),
                     estado   : criatura.getEstado().getNombre(),
-                    stats    : criatura.getEstadisticas().toObject()
+                    stats    : criatura.getEstadisticas().toObject(),
+                    evento   : datos.evento || null
                 })
                 break
         }

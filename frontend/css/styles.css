@@ -1299,3 +1299,261 @@ body {
     0%, 100% { transform: scale(1); filter: brightness(1); }
     50%       { transform: scale(1.15) translateY(-15px); filter: brightness(1.5); }
 }
+
+/* ══════════════════════════════════════════════
+   NOTIFICACIONES DE LOGROS
+   ══════════════════════════════════════════════ */
+
+.logro-notificacion {
+    position      : fixed;
+    bottom        : 120px;
+    right         : -400px;
+    display       : flex;
+    align-items   : center;
+    gap           : 1rem;
+    padding       : 1rem 1.5rem;
+    background    : rgba(10, 10, 20, 0.95);
+    border        : 1px solid var(--color-acento2);
+    border-radius : 16px;
+    box-shadow    : var(--glow-dorado);
+    z-index       : 200;
+    transition    : right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width     : 320px;
+}
+
+.logro-notificacion.visible {
+    right : 20px;
+}
+
+.logro-icono {
+    font-size  : 2.5rem;
+    animation  : pulsar 1s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+.logro-contenido {
+    display        : flex;
+    flex-direction : column;
+    gap            : 0.2rem;
+}
+
+.logro-titulo {
+    font-family : var(--font-principal);
+    font-size   : 0.95rem;
+    color       : var(--color-acento2);
+    font-weight : bold;
+    text-shadow : var(--glow-dorado);
+}
+
+.logro-mensaje {
+    font-size : 0.75rem;
+    color     : var(--color-texto-suave);
+}
+
+/* ══════════════════════════════════════════════
+   EVENTOS ESPECIALES
+   ══════════════════════════════════════════════ */
+
+.evento-especial {
+    position        : fixed;
+    inset           : 0;
+    z-index         : 300;
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    opacity         : 0;
+    transition      : opacity 0.5s ease;
+    pointer-events  : none;
+}
+
+.evento-especial.visible {
+    opacity        : 1;
+    pointer-events : all;
+}
+
+.evento-fondo {
+    position   : absolute;
+    inset      : 0;
+    background : rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.evento-contenido {
+    position        : relative;
+    z-index         : 1;
+    display         : flex;
+    flex-direction  : column;
+    align-items     : center;
+    gap             : 1rem;
+    padding         : 2.5rem;
+    background      : rgba(10, 10, 20, 0.95);
+    border          : 1px solid var(--color-acento2);
+    border-radius   : 20px;
+    box-shadow      : var(--glow-dorado);
+    max-width       : 400px;
+    text-align      : center;
+    animation       : fadeIn 0.5s ease;
+}
+
+.evento-icono {
+    font-size : 4rem;
+    animation : flotar 2s ease-in-out infinite;
+}
+
+.evento-titulo {
+    font-family : var(--font-principal);
+    font-size   : 1.4rem;
+    color       : var(--color-acento2);
+    text-shadow : var(--glow-dorado);
+}
+
+.evento-mensaje {
+    font-family : var(--font-principal);
+    font-size   : 0.95rem;
+    color       : var(--color-texto-suave);
+    font-style  : italic;
+    line-height : 1.6;
+}
+
+.evento-cerrar {
+    padding       : 0.6rem 2rem;
+    background    : linear-gradient(135deg, #1a4a2e, #2d6e4e);
+    border        : 1px solid var(--color-acento);
+    border-radius : 20px;
+    color         : var(--color-acento);
+    cursor        : pointer;
+    font-family   : var(--font-principal);
+    transition    : var(--transicion);
+}
+
+.evento-cerrar:hover {
+    transform  : scale(1.05);
+    box-shadow : var(--glow-verde);
+}
+
+/* ══════════════════════════════════════════════
+   PANEL HISTORIAL
+   ══════════════════════════════════════════════ */
+
+.btn-historial-flotante {
+    position      : fixed;
+    bottom        : 20px;
+    left          : 20px;
+    width         : 50px;
+    height        : 50px;
+    background    : rgba(10, 10, 20, 0.9);
+    border        : 1px solid var(--color-borde);
+    border-radius : 50%;
+    font-size     : 1.3rem;
+    cursor        : pointer;
+    z-index       : 50;
+    transition    : var(--transicion);
+    display       : none;
+}
+
+.btn-historial-flotante:hover {
+    border-color : var(--color-acento2);
+    box-shadow   : var(--glow-dorado);
+    transform    : scale(1.1);
+}
+
+.panel-historial {
+    position        : fixed;
+    bottom          : 80px;
+    left            : 20px;
+    width           : 300px;
+    max-height      : 400px;
+    background      : rgba(10, 10, 20, 0.97);
+    border          : 1px solid var(--color-borde);
+    border-radius   : 16px;
+    z-index         : 100;
+    display         : flex;
+    flex-direction  : column;
+    backdrop-filter : blur(10px);
+    transition      : var(--transicion);
+    box-shadow      : 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.panel-historial.oculto {
+    display : none;
+}
+
+.historial-header {
+    display         : flex;
+    align-items     : center;
+    justify-content : space-between;
+    padding         : 1rem 1.2rem;
+    border-bottom   : 1px solid var(--color-borde);
+}
+
+.historial-titulo {
+    font-family : var(--font-principal);
+    font-size   : 0.95rem;
+    color       : var(--color-acento2);
+}
+
+.historial-cerrar {
+    background    : transparent;
+    border        : none;
+    color         : var(--color-texto-suave);
+    font-size     : 1rem;
+    cursor        : pointer;
+    transition    : var(--transicion);
+}
+
+.historial-cerrar:hover {
+    color : var(--color-acento);
+}
+
+.historial-contenido {
+    overflow-y : auto;
+    padding    : 0.8rem;
+    display    : flex;
+    flex-direction : column;
+    gap        : 0.5rem;
+    max-height : 320px;
+}
+
+.historial-item {
+    display        : flex;
+    align-items    : flex-start;
+    gap            : 0.6rem;
+    padding        : 0.6rem;
+    background     : rgba(255,255,255,0.03);
+    border-radius  : 8px;
+    border-left    : 2px solid var(--color-borde);
+    transition     : var(--transicion);
+}
+
+.historial-item:hover {
+    background   : rgba(255,255,255,0.06);
+    border-color : var(--color-acento);
+}
+
+.historial-item.ACCION    { border-color: #2d6e4e; }
+.historial-item.EVOLUCION { border-color: #c8a96e; }
+.historial-item.DIA       { border-color: #1a4a8e; }
+.historial-item.ESTADO    { border-color: #4a2d8e; }
+
+.historial-icono {
+    font-size   : 1rem;
+    flex-shrink : 0;
+    margin-top  : 0.1rem;
+}
+
+.historial-texto {
+    display        : flex;
+    flex-direction : column;
+    gap            : 0.1rem;
+}
+
+.historial-accion {
+    font-size   : 0.75rem;
+    color       : var(--color-texto);
+    font-weight : bold;
+}
+
+.historial-tiempo {
+    font-size : 0.6rem;
+    color     : var(--color-texto-suave);
+}

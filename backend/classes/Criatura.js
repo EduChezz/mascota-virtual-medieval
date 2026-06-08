@@ -143,6 +143,98 @@ export class Criatura {
         }
     }
 
+
+    // ════════════════════════════════════════════
+    // EVENTOS ESPECIALES ALEATORIOS
+    // ════════════════════════════════════════════
+
+    _generarEventoEspecial() {
+        // 30% de probabilidad por tick
+        if (Math.random() > 0.30) return null
+
+        const eventos = [
+            {
+                id      : 'luna_roja',
+                icono   : '🌕',
+                titulo  : '¡Luna Roja!',
+                mensaje : 'Una luna roja ilumina el bosque. El vínculo se fortalece misteriosamente.',
+                efecto  : (stats) => {
+                    stats.modificar('vinculo',  +15)
+                    stats.modificar('espiritu', +10)
+                }
+            },
+            {
+                id      : 'tormenta',
+                icono   : '⛈️',
+                titulo  : '¡Tormenta en el Bosque!',
+                mensaje : 'Una tormenta sacude los árboles. Sylvae necesita consuelo urgente.',
+                efecto  : (stats) => {
+                    stats.modificar('espiritu', -15)
+                    stats.modificar('energia',  -10)
+                }
+            },
+            {
+                id      : 'florecimiento',
+                icono   : '🌺',
+                titulo  : '¡Florecimiento Mágico!',
+                mensaje : 'Flores mágicas brotan alrededor de Sylvae. El bosque celebra.',
+                efecto  : (stats) => {
+                    stats.modificar('vitalidad', +20)
+                    stats.modificar('espiritu',  +15)
+                }
+            },
+            {
+                id      : 'hongos_magicos',
+                icono   : '🍄',
+                titulo  : '¡Hongos Mágicos!',
+                mensaje : 'Sylvae encontró hongos mágicos. ¡Su hambre desaparece!',
+                efecto  : (stats) => {
+                    stats.modificar('hambre',    -40)
+                    stats.modificar('vitalidad', +10)
+                }
+            },
+            {
+                id      : 'visita_sabio',
+                icono   : '🧙',
+                titulo  : '¡El Sabio Visita el Bosque!',
+                mensaje : '"El amor que das a los seres vivos no desaparece... sigue cuidando."',
+                efecto  : (stats) => {
+                    stats.modificar('vinculo',  +20)
+                    stats.modificar('espiritu', +20)
+                }
+            },
+            {
+                id      : 'lluvia_estelar',
+                icono   : '🌠',
+                titulo  : '¡Lluvia Estelar!',
+                mensaje : 'Las estrellas caen sobre el bosque. Sylvae brilla con energía renovada.',
+                efecto  : (stats) => {
+                    stats.modificar('energia',  +30)
+                    stats.modificar('espiritu', +10)
+                }
+            },
+            {
+                id      : 'espiritu_ancestral',
+                icono   : '👁️',
+                titulo  : '¡Espíritu Ancestral!',
+                mensaje : 'Un espíritu antiguo bendice a Sylvae. Su vitalidad se restaura.',
+                efecto  : (stats) => {
+                    stats.modificar('vitalidad', +25)
+                    stats.modificar('vinculo',   +10)
+                }
+            }
+        ]
+
+        const evento = eventos[Math.floor(Math.random() * eventos.length)]
+        evento.efecto(this.estadisticas)
+        return {
+            id      : evento.id,
+            icono   : evento.icono,
+            titulo  : evento.titulo,
+            mensaje : evento.mensaje
+        }
+    }
+
     // ════════════════════════════════════════
     // TICK DIARIO
     // ════════════════════════════════════════
@@ -152,8 +244,13 @@ export class Criatura {
         this.estadisticas.degradar()
         this._evaluarEvolucion()
         this._actualizarEstado()
+
+        // generar evento especial aleatorio
+        const evento = this._generarEventoEspecial()
+
         this._notificarObservadores('tickDiario', {
-            diasVividos : this.diasVividos
+            diasVividos : this.diasVividos,
+            evento      : evento
         })
     }
 

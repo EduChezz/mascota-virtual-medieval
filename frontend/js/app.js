@@ -419,6 +419,12 @@ function mostrarPantalla(nombre) {
         pantalla.classList.add('activa')
     }, 50)
     estado.pantalla = nombre
+
+    // mostrar botón historial solo en juego
+    mostrarBotonesJuego(nombre === 'juego')
+
+    // ocultar historial al cambiar pantalla
+    document.getElementById('panel-historial')?.classList.add('oculto')
 }
 
 // ════════════════════════════════════════════
@@ -1214,6 +1220,7 @@ async function ejecutarAccion(nombreAccion, btn) {
             // verificar evolución
             const faseAnterior = estado.datosCriatura?.fase
             const faseNueva    = data.datos?.fase
+
             if (faseAnterior !== faseNueva) {
                 GestorAudio.reproducirEvento('/assets/sounds/eventos/evolucion.mp3', 4000)
                 mostrarNotificacion(`✨ ¡${data.datos.nombre} ha evolucionado a ${obtenerLabelFase(faseNueva, data.datos.tipoEvolucion)}!`)
@@ -1223,7 +1230,15 @@ async function ejecutarAccion(nombreAccion, btn) {
             actualizarJuego(data.datos)
             mostrarNotificacion(data.mensaje)
 
-            // iniciar cooldown visual
+            // mostrar logros obtenidos
+            if (data.logros && data.logros.length > 0) {
+                data.logros.forEach((logro, i) => {
+                    setTimeout(() => {
+                        mostrarLogro(logro)
+                    }, i * 2500)
+                })
+            }
+
             CooldownManager.iniciar(nombreAccion, cooldownSegundos)
 
         } else {
@@ -1247,7 +1262,14 @@ function iniciarTickAutomatico() {
         try {
             const res  = await fetch(`${API}/tick`, { method: 'POST' })
             const data = await res.json()
-            if (data.exito) actualizarJuego(data.datos)
+            if (data.exito) {
+                actualizarJuego(data.datos)
+
+                // mostrar evento especial si existe
+                if (data.evento) {
+                    setTimeout(() => mostrarEventoEspecial(data.evento), 1000)
+                }
+            }
         } catch (error) {
             console.error('Error en tick:', error)
         }
@@ -1357,6 +1379,69 @@ function mostrarNotificacion(mensaje, esError = false) {
 }
 
 // ════════════════════════════════════════════
+// SISTEMA DE LOGROS
+// ════════════════════════════════════════════
+
+function mostrarLogro(logro) {
+    // crear elemento de logro
+    const el = document.createElement('div')
+    el.className  = 'logro-notificacion'
+    el.innerHTML  = `
+        <div class="logro-icono">${logro.icono}</div>
+        <div class="logro-contenido">
+            <div class="logro-titulo">${logro.titulo}</div>
+            <div class="logro-mensaje">${logro.mensaje}</div>
+        </div>
+    `
+    document.body.appendChild(el)
+
+    // sonido especial de logro
+    GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 2000)
+
+    // animación entrada
+    setTimeout(() => el.classList.add('visible'), 100)
+
+    // animación salida
+    setTimeout(() => {
+        el.classList.remove('visible')
+        setTimeout(() => el.remove(), 500)
+    }, 4000)
+}
+
+// ════════════════════════════════════════════
+// EVENTOS ESPECIALES
+// ════════════════════════════════════════════
+
+function mostrarEventoEspecial(evento) {
+    if (!evento) return
+
+    const el = document.createElement('div')
+    el.className = 'evento-especial'
+    el.innerHTML = `
+        <div class="evento-fondo"></div>
+        <div class="evento-contenido">
+            <div class="evento-icono">${evento.icono}</div>
+            <div class="evento-titulo">${evento.titulo}</div>
+            <div class="evento-mensaje">${evento.mensaje}</div>
+            <button class="evento-cerrar" onclick="this.parentElement.parentElement.remove()">
+                Continuar →
+            </button>
+        </div>
+    `
+    document.body.appendChild(el)
+    setTimeout(() => el.classList.add('visible'), 100)
+
+    // auto cerrar después de 8 segundos
+    setTimeout(() => {
+        el.classList.remove('visible')
+        setTimeout(() => el.remove(), 500)
+    }, 8000)
+
+    // sonido especial
+    GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 3000)
+}
+
+// ════════════════════════════════════════════
 // PANTALLA FIN
 // ════════════════════════════════════════════
 
@@ -1439,6 +1524,83 @@ dom.btnReiniciar.addEventListener('click', async () => {
 document.getElementById('btn-ver-historial')?.addEventListener('click', () => {
     mostrarNotificacion('📊 Historial próximamente disponible')
 })
+
+// ════════════════════════════════════════════
+// PANEL HISTORIAL
+// ════════════════════════════════════════════
+
+const btnAbrirHistorial  = document.getElementById('btn-abrir-historial')
+const btnCerrarHistorial = document.getElementById('btn-cerrar-historial')
+const panelHistorial     = document.getElementById('panel-historial')
+const historialContenido = document.getElementById('historial-contenido')
+
+btnAbrirHistorial?.addEventListener('click', async () => {
+    panelHistorial.classList.toggle('oculto')
+    if (!panelHistorial.classList.contains('oculto')) {
+        await cargarHistorial()
+    }
+})
+
+btnCerrarHistorial?.addEventListener('click', () => {
+    panelHistorial.classList.add('oculto')
+})
+
+async function cargarHistorial() {
+    try {
+        const res  = await fetch(`${API}/estado`)
+        const data = await res.json()
+        if (!data.exito) return
+
+        const registros = data.datos.historial || []
+        historialContenido.innerHTML = ''
+
+        if (registros.length === 0) {
+            historialContenido.innerHTML =
+                '<p style="color:var(--color-texto-suave);font-size:0.8rem;text-align:center;padding:1rem">Sin registros aún</p>'
+            return
+        }
+
+        const iconosTipo = {
+            ACCION   : '⚡',
+            EVOLUCION: '✨',
+            DIA      : '📅',
+            ESTADO   : '🔄'
+        }
+
+        registros.forEach(reg => {
+            const el  = document.createElement('div')
+            el.className = `historial-item ${reg.tipo}`
+
+            const tiempo = new Date(reg.timestamp).toLocaleTimeString('es', {
+                hour: '2-digit', minute: '2-digit'
+            })
+
+            let texto = ''
+            if (reg.tipo === 'ACCION')    texto = `${reg.datos.accion} → ${reg.datos.mensaje}`
+            if (reg.tipo === 'EVOLUCION') texto = `${reg.datos.de} → ${reg.datos.a}`
+            if (reg.tipo === 'DIA')       texto = `Día ${reg.datos.dia} — ${reg.datos.estado}`
+            if (reg.tipo === 'ESTADO')    texto = `${reg.datos.de || '?'} → ${reg.datos.a}`
+
+            el.innerHTML = `
+                <span class="historial-icono">${iconosTipo[reg.tipo] || '📌'}</span>
+                <div class="historial-texto">
+                    <span class="historial-accion">${texto}</span>
+                    <span class="historial-tiempo">${tiempo}</span>
+                </div>
+            `
+            historialContenido.appendChild(el)
+        })
+
+    } catch (error) {
+        console.error('Error cargando historial:', error)
+    }
+}
+
+// mostrar botón historial solo en pantalla de juego
+function mostrarBotonesJuego(visible) {
+    const btn = document.getElementById('btn-abrir-historial')
+    if (btn) btn.style.display = visible ? 'flex' : 'none'
+}
 
 // ════════════════════════════════════════════
 // INICIALIZACIÓN

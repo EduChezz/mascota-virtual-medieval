@@ -256,10 +256,16 @@ export async function ejecutarTick(req, res) {
 
         await guardarCriatura(doc, criatura, bosque, historial)
 
+        // extraer evento del historial reciente
+        const registros     = historial.getRegistros(1)
+        const ultimoRegistro = registros[0]
+        const eventoActual   = ultimoRegistro?.datos?.evento || null
+
         return res.json({
             exito   : true,
             mensaje : `Día ${criatura.getDiasVividos()} del ciclo`,
-            datos   : construirRespuesta(criatura, bosque, historial, doc)
+            datos   : construirRespuesta(criatura, bosque, historial, doc),
+            evento  : eventoActual
         })
 
     } catch (error) {
