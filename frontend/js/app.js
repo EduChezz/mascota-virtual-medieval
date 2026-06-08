@@ -1,13 +1,9 @@
 // ============================================
 // APP.JS — El Juramento del Bosque Vivo
-// Con sistema de cooldown visual + audio
-// + Modo Normal / Modo Demo
+// Version completa con semillas + minijuegos
 // ============================================
 
 const API = 'https://mascota-virtual-medieval.onrender.com/api/mascota'
-
-// ── Agregar pantalla título al objeto dom ──
-// (agregar dentro del objeto dom existente)
 
 // ════════════════════════════════════════════
 // CONFIGURACIÓN DE MODOS
@@ -17,23 +13,23 @@ const MODOS = {
     normal : {
         nombre    : 'Normal',
         cooldowns : {
-            alimentar : 30,    // 30 segundos
-            jugar     : 30,    // 30 segundos
-            dormir    : 30,    // 30 segundos
-            bañar     : 30,    // 30 segundos
-            meditar   : 30,    // 30 segundos
-            hablar    : 30     // 30 segundos
+            alimentar : 30,
+            jugar     : 30,
+            dormir    : 30,
+            bañar     : 30,
+            meditar   : 30,
+            hablar    : 30
         }
     },
     demo : {
         nombre    : 'Demo',
         cooldowns : {
-            alimentar : 5,    // 5 segundos
-            jugar     : 5,    // 5 segundos
-            dormir    : 5,    // 5 segundos
-            bañar     : 5,    // 5 segundos
-            meditar   : 5,    // 5 segundos
-            hablar    : 5     // 5 segundos
+            alimentar : 5,
+            jugar     : 5,
+            dormir    : 5,
+            bañar     : 5,
+            meditar   : 5,
+            hablar    : 5
         }
     }
 }
@@ -45,27 +41,15 @@ let modoActual = 'normal'
 // ════════════════════════════════════════════
 
 const GestorAudio = {
-
-    canales : {
-        musica  : null,   // música de fondo (loop)
-        efecto  : null,   // efectos de acción
-        criatura: null    // sonidos de criatura
-    },
-
-    volumenes : {
-        musica  : 0.4,
-        efecto  : 0.6,
-        criatura: 0.25
-    },
-
+    canales : { musica: null, efecto: null, criatura: null },
+    volumenes : { musica: 0.4, efecto: 0.6, criatura: 0.25 },
     ultimaSonidoCriatura : 0,
-    cooldownCriatura     : 45000,  // 45 segundos
+    cooldownCriatura     : 45000,
 
-    // ── Música de fondo ───────────────────────
     reproducirMusica(ruta) {
         if (this.canales.musica?.src?.includes(ruta)) return
         this._fadeOut(this.canales.musica, 2000, () => {
-            this.canales.musica     = new Audio(ruta)
+            this.canales.musica        = new Audio(ruta)
             this.canales.musica.loop   = true
             this.canales.musica.volume = 0
             this.canales.musica.play().catch(() => {})
@@ -86,23 +70,17 @@ const GestorAudio = {
         })
     },
 
-    // ── Efectos de acción ─────────────────────
     reproducirEfecto(ruta, duracionMax = 30000) {
         if (this.canales.efecto) {
             this.canales.efecto.pause()
             this.canales.efecto = null
         }
-
-        // bajar música mientras suena el efecto
         if (this.canales.musica) {
             this._fadeVolumen(this.canales.musica, this.volumenes.musica * 0.4, 500)
         }
-
         this.canales.efecto        = new Audio(ruta)
         this.canales.efecto.volume = this.volumenes.efecto
         this.canales.efecto.play().catch(() => {})
-
-        // cortar si excede duracion máxima
         const timeout = setTimeout(() => {
             if (this.canales.efecto) {
                 this._fadeOut(this.canales.efecto, 1000)
@@ -110,8 +88,6 @@ const GestorAudio = {
             }
             this._restaurarMusica()
         }, duracionMax)
-
-        // cuando termina naturalmente
         this.canales.efecto.onended = () => {
             clearTimeout(timeout)
             this.canales.efecto = null
@@ -119,26 +95,30 @@ const GestorAudio = {
         }
     },
 
-    // ── Sonidos de criatura ───────────────────
     reproducirCriatura(ruta) {
         const ahora = Date.now()
         if (ahora - this.ultimaSonidoCriatura < this.cooldownCriatura) return
-
-        this.ultimaSonidoCriatura = ahora
-        this.canales.criatura     = new Audio(ruta)
+        this.ultimaSonidoCriatura    = ahora
+        this.canales.criatura        = new Audio(ruta)
         this.canales.criatura.volume = this.volumenes.criatura
         this.canales.criatura.play().catch(() => {})
     },
 
-    // ── Eventos especiales ────────────────────
     reproducirEvento(ruta, pausaMusica = 4000) {
         this.pausarMusica(pausaMusica)
-        setTimeout(() => {
-            this.reproducirEfecto(ruta, pausaMusica)
-        }, 500)
+        setTimeout(() => this.reproducirEfecto(ruta, pausaMusica), 500)
     },
 
-    // ── Helpers internos ──────────────────────
+    detenerTodo() {
+        ['musica','efecto','criatura'].forEach(canal => {
+            if (this.canales[canal]) {
+                this.canales[canal].pause()
+                this.canales[canal].currentTime = 0
+                this.canales[canal] = null
+            }
+        })
+    },
+
     _restaurarMusica() {
         if (this.canales.musica) {
             this._fadeVolumen(this.canales.musica, this.volumenes.musica, 1000)
@@ -148,8 +128,7 @@ const GestorAudio = {
     _fadeIn(audio, duracion, volumenFinal) {
         if (!audio) return
         audio.volume = 0
-        const pasos     = 20
-        const intervalo = duracion / pasos
+        const pasos = 20, intervalo = duracion / pasos
         const incremento = volumenFinal / pasos
         let paso = 0
         const timer = setInterval(() => {
@@ -161,8 +140,7 @@ const GestorAudio = {
 
     _fadeOut(audio, duracion, callback) {
         if (!audio) { if (callback) callback(); return }
-        const pasos     = 20
-        const intervalo = duracion / pasos
+        const pasos = 20, intervalo = duracion / pasos
         const decremento = audio.volume / pasos
         let paso = 0
         const timer = setInterval(() => {
@@ -178,8 +156,7 @@ const GestorAudio = {
 
     _fadeVolumen(audio, volumenFinal, duracion) {
         if (!audio) return
-        const pasos      = 10
-        const intervalo  = duracion / pasos
+        const pasos = 10, intervalo = duracion / pasos
         const diferencia = (volumenFinal - audio.volume) / pasos
         let paso = 0
         const timer = setInterval(() => {
@@ -189,30 +166,10 @@ const GestorAudio = {
         }, intervalo)
     },
 
-    detenerTodo() {
-        // detener música
-        if (this.canales.musica) {
-            this.canales.musica.pause()
-            this.canales.musica.currentTime = 0
-            this.canales.musica = null
-        }
-        // detener efecto
-        if (this.canales.efecto) {
-            this.canales.efecto.pause()
-            this.canales.efecto.currentTime = 0
-            this.canales.efecto = null
-        }
-        // detener criatura
-        if (this.canales.criatura) {
-            this.canales.criatura.pause()
-            this.canales.criatura.currentTime = 0
-            this.canales.criatura = null
-        }
-    },
-
     getMusicaBosque(salud) {
-        if (salud >= 50) return '/assets/sounds/ambiente/bosque_sano.mp3'
-        return '/assets/sounds/ambiente/bosque_enfermo.mp3'
+        return salud >= 50
+            ? '/assets/sounds/ambiente/bosque_sano.mp3'
+            : '/assets/sounds/ambiente/bosque_enfermo.mp3'
     },
 
     getSonidoCriatura(estadoNombre) {
@@ -234,44 +191,28 @@ const GestorAudio = {
 // ════════════════════════════════════════════
 
 const CooldownManager = {
-
-    timers    : {},
-    intervalos: {},
+    timers: {}, intervalos: {},
 
     iniciar(accion, segundos) {
-        const btn     = document.querySelector(`[data-accion="${accion}"]`)
-        const barra   = document.getElementById(`cd-${accion}`)
-        const texto   = document.getElementById(`txt-${accion}`)
+        const btn   = document.querySelector(`[data-accion="${accion}"]`)
+        const barra = document.getElementById(`cd-${accion}`)
+        const texto = document.getElementById(`txt-${accion}`)
         if (!btn || !barra || !texto) return
-
-        // limpiar timer anterior
         this.limpiar(accion)
-
         btn.disabled = true
         btn.classList.add('en-cooldown')
         btn.classList.remove('listo')
-
         let restante = segundos
         barra.style.width = '100%'
         barra.classList.remove('urgente')
-
-        // actualizar cada segundo
         this.intervalos[accion] = setInterval(() => {
             restante--
             const porcentaje = (restante / segundos) * 100
             barra.style.width = `${porcentaje}%`
             texto.textContent = this._formatearTiempo(restante)
-
-            // urgente cuando queda menos del 20%
-            if (porcentaje < 20) {
-                barra.classList.add('urgente')
-            }
-
-            if (restante <= 0) {
-                this.completar(accion)
-            }
+            if (porcentaje < 20) barra.classList.add('urgente')
+            if (restante <= 0) this.completar(accion)
         }, 1000)
-
         texto.textContent = this._formatearTiempo(restante)
     },
 
@@ -281,13 +222,11 @@ const CooldownManager = {
         const barra = document.getElementById(`cd-${accion}`)
         const texto = document.getElementById(`txt-${accion}`)
         if (!btn) return
-
         btn.disabled = false
         btn.classList.remove('en-cooldown')
         btn.classList.add('listo')
         if (barra) { barra.style.width = '0%'; barra.classList.remove('urgente') }
         if (texto) texto.textContent = '✅ Listo'
-
         setTimeout(() => {
             btn.classList.remove('listo')
             if (texto) texto.textContent = ''
@@ -311,9 +250,7 @@ const CooldownManager = {
         const min = Math.floor(segundos / 60)
         const sec = segundos % 60
         if (min < 60) return `${min}m ${sec}s`
-        const hrs = Math.floor(min / 60)
-        const mn  = min % 60
-        return `${hrs}h ${mn}m`
+        return `${Math.floor(min/60)}h ${min%60}m`
     }
 }
 
@@ -342,28 +279,28 @@ const dom = {
         juego  : document.getElementById('pantalla-juego'),
         fin    : document.getElementById('pantalla-fin')
     },
-    slides         : document.querySelectorAll('.intro-slide'),
-    btnAnterior    : document.getElementById('btn-anterior'),
-    btnSiguiente   : document.getElementById('btn-siguiente'),
-    btnComenzar    : document.getElementById('btn-comenzar'),
-    introPuntos    : document.getElementById('intro-puntos'),
-    inputNombre    : document.getElementById('input-nombre'),
-    btnCrear       : document.getElementById('btn-crear'),
-    crearError     : document.getElementById('crear-error'),
-    bosqueFondo    : document.getElementById('bosque-fondo'),
-    bosqueOverlay  : document.getElementById('bosque-overlay'),
-    barraBosque    : document.getElementById('barra-bosque'),
-    valorBosque    : document.getElementById('valor-bosque'),
-    nombreCriatura : document.getElementById('nombre-criatura'),
-    faseCriatura   : document.getElementById('fase-criatura'),
-    diasVividos    : document.getElementById('dias-vividos'),
-    criaturaSprite : document.getElementById('criatura-sprite'),
-    criaturaAura   : document.getElementById('criatura-aura'),
-    estadoMensaje  : document.getElementById('estado-mensaje'),
-    accionesPanel  : document.getElementById('acciones-panel'),
-    botonesAccion  : document.querySelectorAll('.btn-accion'),
-    notificacion   : document.getElementById('notificacion'),
-    btnModo        : document.getElementById('btn-modo'),
+    slides            : document.querySelectorAll('.intro-slide'),
+    btnAnterior       : document.getElementById('btn-anterior'),
+    btnSiguiente      : document.getElementById('btn-siguiente'),
+    btnComenzar       : document.getElementById('btn-comenzar'),
+    introPuntos       : document.getElementById('intro-puntos'),
+    inputNombre       : document.getElementById('input-nombre'),
+    btnCrear          : document.getElementById('btn-crear'),
+    crearError        : document.getElementById('crear-error'),
+    bosqueFondo       : document.getElementById('bosque-fondo'),
+    bosqueOverlay     : document.getElementById('bosque-overlay'),
+    barraBosque       : document.getElementById('barra-bosque'),
+    valorBosque       : document.getElementById('valor-bosque'),
+    nombreCriatura    : document.getElementById('nombre-criatura'),
+    faseCriatura      : document.getElementById('fase-criatura'),
+    diasVividos       : document.getElementById('dias-vividos'),
+    criaturaSprite    : document.getElementById('criatura-sprite'),
+    criaturaAura      : document.getElementById('criatura-aura'),
+    estadoMensaje     : document.getElementById('estado-mensaje'),
+    accionesPanel     : document.getElementById('acciones-panel'),
+    botonesAccion     : document.querySelectorAll('.btn-accion'),
+    notificacion      : document.getElementById('notificacion'),
+    btnModo           : document.getElementById('btn-modo'),
     stats : {
         vitalidad : { barra: document.getElementById('barra-vitalidad'), val: document.getElementById('val-vitalidad') },
         hambre    : { barra: document.getElementById('barra-hambre'),    val: document.getElementById('val-hambre')    },
@@ -371,15 +308,13 @@ const dom = {
         energia   : { barra: document.getElementById('barra-energia'),   val: document.getElementById('val-energia')   },
         vinculo   : { barra: document.getElementById('barra-vinculo'),   val: document.getElementById('val-vinculo')   }
     },
-    finIcono    : document.getElementById('fin-icono'),
-    finTitulo   : document.getElementById('fin-titulo'),
-    finMensaje  : document.getElementById('fin-mensaje'),
-    btnReiniciar: document.getElementById('btn-reiniciar'),
+    finIcono          : document.getElementById('fin-icono'),
+    finTitulo         : document.getElementById('fin-titulo'),
+    finMensaje        : document.getElementById('fin-mensaje'),
+    btnReiniciar      : document.getElementById('btn-reiniciar'),
     btnTituloComenzar : document.getElementById('btn-titulo-comenzar'),
     pantallaTitulo    : document.getElementById('pantalla-titulo'),
     tituloParticulas  : document.getElementById('titulo-particulas')
-
-
 }
 
 // ════════════════════════════════════════════
@@ -388,17 +323,13 @@ const dom = {
 
 dom.btnModo.addEventListener('click', () => {
     modoActual = modoActual === 'normal' ? 'demo' : 'normal'
-    const modo = MODOS[modoActual]
-
     dom.btnModo.querySelector('.accion-label').textContent =
         modoActual === 'demo' ? '⚡ Demo ON' : 'Modo Demo'
     dom.btnModo.classList.toggle('demo-activo', modoActual === 'demo')
-
     mostrarNotificacion(
         modoActual === 'demo'
             ? '⚡ Modo Demo activado — cooldowns reducidos'
-            : '🌿 Modo Normal activado',
-        false
+            : '🌿 Modo Normal activado'
     )
 })
 
@@ -419,11 +350,7 @@ function mostrarPantalla(nombre) {
         pantalla.classList.add('activa')
     }, 50)
     estado.pantalla = nombre
-
-    // mostrar botón historial solo en juego
     mostrarBotonesJuego(nombre === 'juego')
-
-    // ocultar historial al cambiar pantalla
     document.getElementById('panel-historial')?.classList.add('oculto')
 }
 
@@ -470,15 +397,11 @@ dom.btnComenzar.addEventListener('click',  () => {
 // ════════════════════════════════════════════
 
 const Huevo = {
-    calor            : 0,
-    maxCalor         : 100,
-    countdownActivo  : false,
-    countdownValor   : 3,
-    intervalBajada   : null,
-    intervalCountdown: null,
-    listo            : false,
+    calor: 0, maxCalor: 100,
+    countdownActivo: false, countdownValor: 5,
+    intervalBajada: null, intervalCountdown: null,
+    listo: false, _ultimoClick: null,
 
-    // elementos del DOM
     elementos : {
         barra      : document.getElementById('calor-barra'),
         porcentaje : document.getElementById('calor-porcentaje'),
@@ -498,102 +421,57 @@ const Huevo = {
     },
 
     init() {
-        this.calor           = 0
-        this.listo           = false
+        this.calor = 0
+        this.listo = false
         this.countdownActivo = false
-        this._ultimoClick    = null
-
-        // música de fondo del huevo → nacimiento.mp3
-
+        this._ultimoClick = null
         GestorAudio.reproducirMusica('/assets/sounds/eventos/nacimiento.mp3')
-
-        // usar imagen real del huevo
         const sprite = this.elementos.sprite
         if (sprite) {
-            sprite.innerHTML  = ''
+            sprite.innerHTML = ''
             sprite.style.fontSize = 'unset'
             const img = document.createElement('img')
-            img.src   = '/assets/images/criatura/huevo.png'
-            img.style.cssText = `
-                width      : 180px;
-                height     : 180px;
-                object-fit : contain;
-                filter     : drop-shadow(0 0 20px rgba(200, 169, 110, 0.5));
-            `
+            img.src = '/assets/images/criatura/huevo.png'
+            img.style.cssText = 'width:180px;height:180px;object-fit:contain;filter:drop-shadow(0 0 20px rgba(200,169,110,0.5));'
             sprite.appendChild(img)
         }
-
         this.actualizarUI()
         this.iniciarBajadaAutomatica()
     },
 
     calentar() {
         if (this.listo) return
-
-        // subida según nivel actual
         let incremento = 4
-        if (this.calor >= 67)      incremento = 2
+        if (this.calor >= 67) incremento = 2
         else if (this.calor >= 34) incremento = 3
-
-        // bonus por click rápido
         const ahora = Date.now()
-        if (this._ultimoClick && (ahora - this._ultimoClick) < 400) {
-            incremento += 1
-        }
+        if (this._ultimoClick && (ahora - this._ultimoClick) < 400) incremento += 1
         this._ultimoClick = ahora
-
         this.calor = Math.min(this.maxCalor, this.calor + incremento)
-
-        // efecto visual botón
         this.elementos.btnCalentar.style.transform = 'scale(0.95)'
-        setTimeout(() => {
-            if (this.elementos.btnCalentar) {
-                this.elementos.btnCalentar.style.transform = 'scale(1)'
-            }
-        }, 100)
-
+        setTimeout(() => { if (this.elementos.btnCalentar) this.elementos.btnCalentar.style.transform = 'scale(1)' }, 100)
         this.crearParticulaCalor()
         GestorAudio.reproducirEfecto('/assets/sounds/acciones/alimentar.mp3', 500)
         this.actualizarUI()
-
-        if (this.calor >= this.maxCalor && !this.countdownActivo) {
-            this.iniciarCountdown()
-        }
+        if (this.calor >= this.maxCalor && !this.countdownActivo) this.iniciarCountdown()
     },
 
     actualizarUI() {
         const p = this.calor
         const e = this.elementos
-
-        // actualizar barra
-        e.barra.style.width      = `${p}%`
+        e.barra.style.width = `${p}%`
         e.porcentaje.textContent = `${Math.round(p)}%`
-
-        // color de la barra según temperatura
         e.barra.className = 'calor-barra'
-        if (p >= 100)     e.barra.classList.add('maximo')
+        if (p >= 100) e.barra.classList.add('maximo')
         else if (p >= 67) e.barra.classList.add('caliente')
         else if (p >= 34) e.barra.classList.add('tibio')
-
-        // actualizar imagen del huevo según temperatura
         const img = e.sprite?.querySelector('img')
         if (img) {
-            if (p >= 100) {
-                img.style.filter = 'drop-shadow(0 0 40px rgba(255,215,100,0.9)) brightness(1.5)'
-                img.style.animation = 'vibrar 0.1s ease-in-out infinite'
-            } else if (p >= 67) {
-                img.style.filter = 'drop-shadow(0 0 25px rgba(226,74,74,0.8)) brightness(1.3) hue-rotate(-20deg)'
-                img.style.animation = 'vibrar 0.2s ease-in-out infinite'
-            } else if (p >= 34) {
-                img.style.filter = 'drop-shadow(0 0 15px rgba(226,144,74,0.6)) brightness(1.1) hue-rotate(10deg)'
-                img.style.animation = 'flotar 2s ease-in-out infinite'
-            } else {
-                img.style.filter = 'drop-shadow(0 0 10px rgba(74,144,226,0.4)) brightness(0.9) hue-rotate(180deg)'
-                img.style.animation = 'flotar 3s ease-in-out infinite'
-            }
+            if (p >= 100) { img.style.filter = 'drop-shadow(0 0 40px rgba(255,215,100,0.9)) brightness(1.5)'; img.style.animation = 'vibrar 0.1s ease-in-out infinite' }
+            else if (p >= 67) { img.style.filter = 'drop-shadow(0 0 25px rgba(226,74,74,0.8)) brightness(1.3) hue-rotate(-20deg)'; img.style.animation = 'vibrar 0.2s ease-in-out infinite' }
+            else if (p >= 34) { img.style.filter = 'drop-shadow(0 0 15px rgba(226,144,74,0.6)) brightness(1.1) hue-rotate(10deg)'; img.style.animation = 'flotar 2s ease-in-out infinite' }
+            else { img.style.filter = 'drop-shadow(0 0 10px rgba(74,144,226,0.4)) brightness(0.9) hue-rotate(180deg)'; img.style.animation = 'flotar 3s ease-in-out infinite' }
         }
-
-        // aura según temperatura
         if (p >= 100) {
             e.aura.style.background = 'radial-gradient(circle, rgba(255,215,100,0.6) 0%, transparent 70%)'
             e.btnCalentar.classList.add('maximo')
@@ -618,21 +496,17 @@ const Huevo = {
         this.intervalBajada = setInterval(() => {
             if (this.listo) return
             if (this.countdownActivo && this.calor >= this.maxCalor) return
-
-            // si estaba en countdown pero bajó del 100%
             if (this.countdownActivo && this.calor < this.maxCalor) {
                 this.countdownActivo = false
                 clearInterval(this.intervalCountdown)
                 this.elementos.countdown.textContent = ''
             }
-
             let bajada = 5
-            if (this.calor >= 67)      bajada = 2
+            if (this.calor >= 67) bajada = 2
             else if (this.calor >= 34) bajada = 3
-
             this.calor = Math.max(0, this.calor - bajada)
             this.actualizarUI()
-        }, 800)   // ← cada 0.8 segundos
+        }, 800)
     },
 
     iniciarCountdown() {
@@ -640,28 +514,18 @@ const Huevo = {
         this.countdownValor  = 5
         const e = this.elementos
         e.countdown.textContent = `${this.countdownValor}...`
-
-        // PASO 1 → fade out de nacimiento.mp3
         GestorAudio._fadeOut(GestorAudio.canales.musica, 1000, () => {
-
-            // PASO 2 → silencio 300ms
             setTimeout(() => {
-
-                // PASO 3 → evolucion.mp3 arranca limpio
                 GestorAudio.canales.efecto        = new Audio('/assets/sounds/eventos/evolucion.mp3')
                 GestorAudio.canales.efecto.volume = 0.7
                 GestorAudio.canales.efecto.play().catch(() => {})
-
             }, 300)
         })
-
         this.intervalCountdown = setInterval(() => {
             if (this.calor < this.maxCalor) {
                 this.countdownActivo = false
                 e.countdown.textContent = ''
                 clearInterval(this.intervalCountdown)
-
-                // si baja del 100% → volver a nacimiento.mp3
                 if (GestorAudio.canales.efecto) {
                     GestorAudio._fadeOut(GestorAudio.canales.efecto, 500, () => {
                         GestorAudio.canales.efecto = null
@@ -670,12 +534,8 @@ const Huevo = {
                 }
                 return
             }
-
             this.countdownValor--
-            e.countdown.textContent = this.countdownValor > 0
-                ? `${this.countdownValor}...`
-                : '✨'
-
+            e.countdown.textContent = this.countdownValor > 0 ? `${this.countdownValor}...` : '✨'
             if (this.countdownValor <= 0) {
                 clearInterval(this.intervalCountdown)
                 this.eclosionar()
@@ -686,55 +546,24 @@ const Huevo = {
     eclosionar() {
         this.listo = true
         if (this.intervalBajada) clearInterval(this.intervalBajada)
-
         const e = this.elementos
-
-        // PASO 1 → flash de luz
         const flash = document.createElement('div')
-        flash.style.cssText = `
-            position       : fixed;
-            inset          : 0;
-            background     : white;
-            opacity        : 0;
-            z-index        : 999;
-            transition     : opacity 0.3s ease;
-            pointer-events : none;
-        `
+        flash.style.cssText = 'position:fixed;inset:0;background:white;opacity:0;z-index:999;transition:opacity 0.3s ease;pointer-events:none;'
         document.body.appendChild(flash)
         setTimeout(() => flash.style.opacity = '1', 50)
-
-        // PASO 2 → fade out de evolucion.mp3
         GestorAudio.detenerTodo()
-
-        // PASO 3 → flash desaparece
         setTimeout(() => {
             flash.style.transition = 'opacity 0.8s ease'
             flash.style.opacity    = '0'
-
-            // fondo bosque aparece
             const fondo = document.querySelector('.crear-fondo')
-            if (fondo) {
-                fondo.style.filter     = 'brightness(0.7)'
-                fondo.style.transition = 'filter 1s ease'
-            }
-
-            // partículas doradas
+            if (fondo) { fondo.style.filter = 'brightness(0.7)'; fondo.style.transition = 'filter 1s ease' }
             _lanzarParticulasEclosion()
-
         }, 400)
-
-        // PASO 4 → quitar flash
         setTimeout(() => flash.remove(), 1500)
-
-        // PASO 5 → detener TODO y arrancar bosque_sano limpio
         setTimeout(() => {
             GestorAudio.detenerTodo()
-            setTimeout(() => {
-                GestorAudio.reproducirMusica('/assets/sounds/ambiente/bosque_sano.mp3')
-            }, 500)
+            setTimeout(() => GestorAudio.reproducirMusica('/assets/sounds/ambiente/bosque_sano.mp3'), 500)
         }, 1200)
-
-        // PASO 6 → mostrar formulario nombre
         setTimeout(() => {
             document.getElementById('fase-calentamiento').classList.add('oculto')
             document.getElementById('fase-nombre').classList.remove('oculto')
@@ -744,33 +573,21 @@ const Huevo = {
 
     crearParticulaCalor() {
         if (!this.elementos.particulas) return
-        const el       = document.createElement('div')
-        const emojis   = ['🔥', '✨', '⚡', '💫']
-        const emoji    = this.calor > 66
-            ? emojis[Math.floor(Math.random() * emojis.length)]
-            : '✨'
-        const x        = 35 + Math.random() * 30  // cerca del centro
+        const el = document.createElement('div')
+        const emojis = ['🔥','✨','⚡','💫']
+        el.textContent = this.calor > 66 ? emojis[Math.floor(Math.random()*emojis.length)] : '✨'
+        const x = 35 + Math.random() * 30
         const duration = 1000 + Math.random() * 1000
-
-        el.textContent = emoji
-        el.style.cssText = `
-            position   : absolute;
-            font-size  : ${0.5 + Math.random() * 0.8}rem;
-            left       : ${x}vw;
-            bottom     : 40%;
-            opacity    : 0.8;
-            animation  : volarMariposa ${duration}ms ease-out forwards;
-            pointer-events : none;
-        `
+        el.style.cssText = `position:absolute;font-size:${0.5+Math.random()*0.8}rem;left:${x}vw;bottom:40%;opacity:0.8;animation:volarMariposa ${duration}ms ease-out forwards;pointer-events:none;`
         this.elementos.particulas.appendChild(el)
         setTimeout(() => el.remove(), duration)
     },
 
     reset() {
-        this.calor           = 0
-        this.listo           = false
+        this.calor = 0
+        this.listo = false
         this.countdownActivo = false
-        this.countdownValor  = 3
+        this.countdownValor  = 5
         if (this.intervalBajada)    clearInterval(this.intervalBajada)
         if (this.intervalCountdown) clearInterval(this.intervalCountdown)
         document.getElementById('fase-calentamiento')?.classList.remove('oculto')
@@ -782,27 +599,14 @@ const Huevo = {
 function _lanzarParticulasEclosion() {
     const contenedor = document.getElementById('calor-particulas')
     if (!contenedor) return
-
-    const emojis = ['✨', '🌟', '💫', '⭐', '🌿', '🍃']
-
+    const emojis = ['✨','🌟','💫','⭐','🌿','🍃']
     for (let i = 0; i < 30; i++) {
         setTimeout(() => {
-            const el       = document.createElement('div')
-            const emoji    = emojis[Math.floor(Math.random() * emojis.length)]
-            const x        = Math.random() * 100
+            const el = document.createElement('div')
+            const x  = Math.random() * 100
             const duration = 1500 + Math.random() * 2000
-
-            el.textContent = emoji
-            el.style.cssText = `
-                position       : fixed;
-                font-size      : ${0.8 + Math.random() * 1.5}rem;
-                left           : ${x}vw;
-                bottom         : -30px;
-                opacity        : 0.9;
-                animation      : volarMariposa ${duration}ms ease-out forwards;
-                pointer-events : none;
-                z-index        : 100;
-            `
+            el.textContent = emojis[Math.floor(Math.random()*emojis.length)]
+            el.style.cssText = `position:fixed;font-size:${0.8+Math.random()*1.5}rem;left:${x}vw;bottom:-30px;opacity:0.9;animation:volarMariposa ${duration}ms ease-out forwards;pointer-events:none;z-index:100;`
             contenedor.appendChild(el)
             setTimeout(() => el.remove(), duration)
         }, i * 80)
@@ -810,38 +614,21 @@ function _lanzarParticulasEclosion() {
 }
 
 function _reaccionSylvae(accion) {
-    const clasesReaccion = [
-        'sylvae-reaccion-alimentar',
-        'sylvae-reaccion-jugar',
-        'sylvae-reaccion-dormir',
-        'sylvae-reaccion-meditar'
-    ]
-
+    const clasesReaccion = ['sylvae-reaccion-alimentar','sylvae-reaccion-jugar','sylvae-reaccion-dormir','sylvae-reaccion-meditar']
     clasesReaccion.forEach(c => dom.criaturaSprite.classList.remove(c))
-
-    const mapaReacciones = {
-        alimentar : 'sylvae-reaccion-alimentar',
-        jugar     : 'sylvae-reaccion-jugar',
-        dormir    : 'sylvae-reaccion-dormir',
-        meditar   : 'sylvae-reaccion-meditar'
-    }
-
+    const mapaReacciones = { alimentar:'sylvae-reaccion-alimentar', jugar:'sylvae-reaccion-jugar', dormir:'sylvae-reaccion-dormir', meditar:'sylvae-reaccion-meditar' }
     const claseReaccion = mapaReacciones[accion]
     if (!claseReaccion) return
-
     dom.criaturaSprite.classList.add(claseReaccion)
-
-    setTimeout(() => {
-        dom.criaturaSprite.classList.remove(claseReaccion)
-    }, 1200)
+    setTimeout(() => dom.criaturaSprite.classList.remove(claseReaccion), 1200)
 }
 
-// ── Evento botón calentar ─────────────────────
-document.getElementById('btn-calentar')?.addEventListener('click', () => {
-    Huevo.calentar()
-})
+document.getElementById('btn-calentar')?.addEventListener('click', () => Huevo.calentar())
 
-// ── Evento crear criatura ─────────────────────
+// ════════════════════════════════════════════
+// CREAR CRIATURA
+// ════════════════════════════════════════════
+
 dom.btnCrear.addEventListener('click', async () => {
     const nombre = dom.inputNombre.value.trim()
     if (nombre.length < 2) {
@@ -850,47 +637,33 @@ dom.btnCrear.addEventListener('click', async () => {
         setTimeout(() => dom.inputNombre.classList.remove('shake'), 400)
         return
     }
-
     dom.btnCrear.disabled    = true
     dom.btnCrear.textContent = '✨ Despertando...'
     dom.crearError.textContent = ''
-
     try {
         const res  = await fetch(`${API}/crear`, {
-            method  : 'POST',
-            headers : { 'Content-Type': 'application/json' },
-            body    : JSON.stringify({ nombre })
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ nombre })
         })
         const data = await res.json()
-
         if (data.exito) {
             estado.datosCriatura = data.datos
             mostrarNotificacion(`¡${nombre} ha despertado del huevo espiritual!`)
             setTimeout(() => {
-                // detener TODO antes de entrar al juego
                 GestorAudio.detenerTodo()
-                
                 mostrarPantalla('juego')
                 actualizarJuego(data.datos)
                 iniciarTickAutomatico()
                 iniciarParticulas(data.datos)
                 Huevo.reset()
-
-                // música del juego limpia después de 800ms
                 setTimeout(() => {
                     GestorAudio.detenerTodo()
-                    GestorAudio.reproducirMusica(
-                        GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
-                    )
+                    GestorAudio.reproducirMusica(GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100))
                 }, 800)
-
             }, 1000)
         } else {
-            if (data.mensaje.includes('Ya existe')) {
-                await cargarEstado()
-            } else {
-                dom.crearError.textContent = data.mensaje
-            }
+            if (data.mensaje.includes('Ya existe')) await cargarEstado()
+            else dom.crearError.textContent = data.mensaje
         }
     } catch (error) {
         dom.crearError.textContent = 'Error al conectar con el bosque.'
@@ -901,14 +674,11 @@ dom.btnCrear.addEventListener('click', async () => {
     }
 })
 
-dom.inputNombre.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') dom.btnCrear.click()
-})
+dom.inputNombre.addEventListener('keypress', (e) => { if (e.key === 'Enter') dom.btnCrear.click() })
 
 // ════════════════════════════════════════════
 // CARGAR ESTADO
 // ════════════════════════════════════════════
-
 
 async function cargarEstado() {
     GestorAudio.detenerTodo()
@@ -922,13 +692,9 @@ async function cargarEstado() {
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
             iniciarParticulas(data.datos)
-            GestorAudio.reproducirMusica(
-                GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
-            )
+            GestorAudio.reproducirMusica(GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100))
         }
-    } catch (error) {
-        console.error('Error al cargar estado:', error)
-    }
+    } catch (error) { console.error('Error al cargar estado:', error) }
 }
 
 // ════════════════════════════════════════════
@@ -937,23 +703,17 @@ async function cargarEstado() {
 
 function actualizarJuego(datos) {
     if (!datos) return
+    const { nombre, fase, tipoEvolucion, estado: est, estadisticas, bosque, diasVividos, imagenActual, tendencia, urgencias } = datos
 
-    const { nombre, fase, tipoEvolucion, estado: est,
-            estadisticas, bosque, diasVividos, imagenActual,
-            tendencia, urgencias } = datos
-
-    // header
     dom.nombreCriatura.textContent = nombre
     dom.faseCriatura.textContent   = obtenerLabelFase(fase, tipoEvolucion)
     dom.diasVividos.textContent    = diasVividos
 
-    // bosque
     const saludBosque = bosque?.salud ?? 100
     dom.barraBosque.style.width = `${saludBosque}%`
     dom.valorBosque.textContent = saludBosque
     actualizarFondoBosque(saludBosque)
 
-    // estadísticas
     if (estadisticas) {
         actualizarStat('vitalidad', estadisticas.vitalidad)
         actualizarStat('hambre',    estadisticas.hambre)
@@ -962,43 +722,27 @@ function actualizarJuego(datos) {
         actualizarStat('vinculo',   estadisticas.vinculo)
     }
 
-    // imagen
+    // semillas
+    if (datos.semillas !== undefined) actualizarSemillas(datos.semillas)
+
     actualizarImagenCriatura(imagenActual, fase, tipoEvolucion)
-
-    // mensaje
     if (est?.mensaje) dom.estadoMensaje.textContent = est.mensaje
-
-    // aura
     actualizarAura(est?.nombre, tipoEvolucion)
-
-    // botones
     if (est?.acciones) actualizarBotonesAccion(est.acciones)
-
-    // partículas
     actualizarParticulas(saludBosque, tipoEvolucion)
-
-    // ── BADGE DE TENDENCIA ────────────────────
     actualizarBadgeTendencia(tendencia, diasVividos, fase)
-
-    // ── SISTEMA DE URGENCIA ───────────────────
     actualizarUrgencias(urgencias, nombre)
 
-    // ── MÚSICA SEGÚN BOSQUE ───────────────────
     const musicaCorrecta = GestorAudio.getMusicaBosque(saludBosque)
-    if (GestorAudio.canales.musica &&
-        !GestorAudio.canales.musica.src?.includes(
-            musicaCorrecta.split('/').pop()
-        )) {
+    if (GestorAudio.canales.musica && !GestorAudio.canales.musica.src?.includes(musicaCorrecta.split('/').pop())) {
         GestorAudio.reproducirMusica(musicaCorrecta)
     }
 
-    // sonido criatura cuando cambia estado
     if (estado.estadoAnterior !== est?.nombre && estado.estadoAnterior !== null) {
         GestorAudio.reproducirCriatura(GestorAudio.getSonidoCriatura(est?.nombre))
     }
     estado.estadoAnterior = est?.nombre
 
-    // fin de juego
     if (est?.nombre === 'retorno' || est?.nombre === 'perdido') {
         setTimeout(() => mostrarPantallaFin(datos), 2000)
     }
@@ -1006,18 +750,9 @@ function actualizarJuego(datos) {
 
 function obtenerLabelFase(fase, tipo) {
     const labels = {
-        huevo        : '🥚 Huevo Espiritual',
-        base         : '🐾 Sylvae',
-        evolucionada : {
-            natura  : '🌿 Sylvae Natura',
-            umbra   : '🌙 Sylvae Umbra',
-            ignis   : '🔥 Sylvae Ignis',
-            aqua    : '💧 Sylvae Aqua',
-            aether  : '✨ Sylvae Aether',
-            umbris  : '💔 Sylvae Umbris'
-        },
-        retorno : '🌿 Retorno al Bosque',
-        perdido : '💔 Perdido'
+        huevo: '🥚 Huevo Espiritual', base: '🐾 Sylvae',
+        evolucionada: { natura:'🌿 Sylvae Natura', umbra:'🌙 Sylvae Umbra', ignis:'🔥 Sylvae Ignis', aqua:'💧 Sylvae Aqua', aether:'✨ Sylvae Aether', umbris:'💔 Sylvae Umbris' },
+        retorno: '🌿 Retorno al Bosque', perdido: '💔 Perdido'
     }
     if (fase === 'evolucionada' && tipo) return labels.evolucionada[tipo] || '✨ Sylvae'
     return labels[fase] || fase
@@ -1046,143 +781,66 @@ function actualizarImagenCriatura(imagenActual, fase, tipo) {
     const img = document.createElement('img')
     img.src   = imagenActual || '/assets/images/criatura/huevo.png'
     img.alt   = 'Sylvae'
-    img.onerror = () => {
-        dom.criaturaSprite.innerHTML      = fase === 'huevo' ? '🥚' : '🐾'
-        dom.criaturaSprite.style.fontSize = '7rem'
-    }
+    img.onerror = () => { dom.criaturaSprite.innerHTML = fase === 'huevo' ? '🥚' : '🐾'; dom.criaturaSprite.style.fontSize = '7rem' }
     dom.criaturaSprite.appendChild(img)
 }
 
 function obtenerColorTipo(tipo) {
-    const colores = {
-        natura  : 'rgba(45, 200, 78, 0.6)',
-        umbra   : 'rgba(107, 78, 200, 0.6)',
-        ignis   : 'rgba(255, 140, 0, 0.6)',
-        aqua    : 'rgba(0, 180, 220, 0.6)',
-        aether  : 'rgba(255, 215, 100, 0.6)',
-        umbris  : 'rgba(80, 0, 0, 0.6)',
-        retorno : 'rgba(255, 215, 100, 0.8)'
-    }
-    return colores[tipo] || 'rgba(127, 255, 127, 0.4)'
+    const colores = { natura:'rgba(45,200,78,0.6)', umbra:'rgba(107,78,200,0.6)', ignis:'rgba(255,140,0,0.6)', aqua:'rgba(0,180,220,0.6)', aether:'rgba(255,215,100,0.6)', umbris:'rgba(80,0,0,0.6)', retorno:'rgba(255,215,100,0.8)' }
+    return colores[tipo] || 'rgba(127,255,127,0.4)'
 }
 
 function actualizarAura(estadoNombre, tipo) {
     const color = obtenerColorTipo(tipo)
-
-    // aura
-    dom.criaturaAura.style.background =
-        `radial-gradient(circle, ${color} 0%, transparent 70%)`
-
-    // ── animación de Sylvae según estado ─────
-    const clases = [
-        'sylvae-paz', 'sylvae-alegre', 'sylvae-somnoliento',
-        'sylvae-hambriento', 'sylvae-triste', 'sylvae-peligro',
-        'sylvae-retorno', 'sylvae-perdido'
-    ]
-
-    // quitar todas las clases de estado
+    dom.criaturaAura.style.background = `radial-gradient(circle, ${color} 0%, transparent 70%)`
+    const clases = ['sylvae-paz','sylvae-alegre','sylvae-somnoliento','sylvae-hambriento','sylvae-triste','sylvae-peligro','sylvae-retorno','sylvae-perdido']
     clases.forEach(c => dom.criaturaSprite.classList.remove(c))
-
-    // mapeo estado → clase CSS
-    const mapaClases = {
-        paz         : 'sylvae-paz',
-        alegre      : 'sylvae-alegre',
-        somnoliento : 'sylvae-somnoliento',
-        hambriento  : 'sylvae-hambriento',
-        triste      : 'sylvae-triste',
-        peligro     : 'sylvae-peligro',
-        retorno     : 'sylvae-retorno',
-        perdido     : 'sylvae-perdido'
-    }
-
-    const claseEstado = mapaClases[estadoNombre] || 'sylvae-paz'
-    dom.criaturaSprite.classList.add(claseEstado)
-
-    // tamaño según fase
+    const mapaClases = { paz:'sylvae-paz', alegre:'sylvae-alegre', somnoliento:'sylvae-somnoliento', hambriento:'sylvae-hambriento', triste:'sylvae-triste', peligro:'sylvae-peligro', retorno:'sylvae-retorno', perdido:'sylvae-perdido' }
+    dom.criaturaSprite.classList.add(mapaClases[estadoNombre] || 'sylvae-paz')
     const img = dom.criaturaSprite.querySelector('img')
-    if (img) {
-        img.style.width  = '280px'
-        img.style.height = '280px'
-    }
+    if (img) { img.style.width = '280px'; img.style.height = '280px' }
 }
 
 function actualizarBotonesAccion(accionesDisponibles) {
     dom.botonesAccion.forEach(btn => {
         const accion = btn.dataset.accion
-        if (!accionesDisponibles.includes(accion)) {
-            if (!btn.classList.contains('en-cooldown')) {
-                btn.disabled = true
-            }
+        if (!accionesDisponibles.includes(accion) && !btn.classList.contains('en-cooldown')) {
+            btn.disabled = true
         }
     })
 }
 
-// ════════════════════════════════════════════
-// BADGE DE TENDENCIA
-// ════════════════════════════════════════════
-
 function actualizarBadgeTendencia(tendencia, diasVividos, fase) {
     const badge = document.getElementById('badge-tendencia')
     if (!badge) return
-
-    // solo mostrar desde día 3 en adelante y en fase base o evolucionada
-    if (diasVividos < 3 || fase === 'huevo') {
-        badge.classList.add('oculto')
-        return
-    }
-
+    if (diasVividos < 3 || fase === 'huevo') { badge.classList.add('oculto'); return }
     if (!tendencia) return
-
     badge.classList.remove('oculto')
-    badge.className    = `badge-tendencia ${tendencia.tipo}`
-    badge.textContent  = `${tendencia.icono} Afinidad: ${tendencia.nombre}`
+    badge.className   = `badge-tendencia ${tendencia.tipo}`
+    badge.textContent = `${tendencia.icono} Afinidad: ${tendencia.nombre}`
 }
 
-// ════════════════════════════════════════════
-// SISTEMA DE URGENCIAS
-// ════════════════════════════════════════════
-
-let urgenciaOverlay = null
-let urgenciaTimeout = null
+let urgenciaOverlay = null, urgenciaTimeout = null
 
 function actualizarUrgencias(urgencias, nombre) {
-    if (!urgencias || urgencias.length === 0) {
-        limpiarUrgencias()
-        return
-    }
-
-    // obtener urgencia más crítica
+    if (!urgencias || urgencias.length === 0) { limpiarUrgencias(); return }
     const critica = urgencias.find(u => u.nivel === 'critica')
-    const urgente = urgencias[0]
-    const actual  = critica || urgente
-
-    // overlay de borde
+    const actual  = critica || urgencias[0]
     if (!urgenciaOverlay) {
         urgenciaOverlay = document.createElement('div')
         urgenciaOverlay.className = 'urgencia-overlay'
         document.getElementById('pantalla-juego').appendChild(urgenciaOverlay)
     }
-
     urgenciaOverlay.className = `urgencia-overlay ${actual.nivel}`
-
-    // notificación cada 15 segundos
     if (!urgenciaTimeout) {
         mostrarNotificacion(`${actual.icono} ${actual.mensaje}`, true)
-        GestorAudio.reproducirCriatura(
-            GestorAudio.getSonidoCriatura(
-                actual.nivel === 'critica' ? 'peligro' : 'triste'
-            )
-        )
-        urgenciaTimeout = setTimeout(() => {
-            urgenciaTimeout = null
-        }, 15000)
+        GestorAudio.reproducirCriatura(GestorAudio.getSonidoCriatura(actual.nivel === 'critica' ? 'peligro' : 'triste'))
+        urgenciaTimeout = setTimeout(() => { urgenciaTimeout = null }, 15000)
     }
 }
 
 function limpiarUrgencias() {
-    if (urgenciaOverlay) {
-        urgenciaOverlay.className = 'urgencia-overlay'
-    }
+    if (urgenciaOverlay) urgenciaOverlay.className = 'urgencia-overlay'
 }
 
 // ════════════════════════════════════════════
@@ -1199,48 +857,28 @@ dom.botonesAccion.forEach(btn => {
 async function ejecutarAccion(nombreAccion, btn) {
     btn.disabled = true
     const cooldownSegundos = MODOS[modoActual].cooldowns[nombreAccion] || 60
-
-    // reproducir efecto de acción (máximo 30s)
-    GestorAudio.reproducirEfecto(
-        `/assets/sounds/acciones/${nombreAccion}.mp3`,
-        30000
-    )
-
+    GestorAudio.reproducirEfecto(`/assets/sounds/acciones/${nombreAccion}.mp3`, 30000)
     _reaccionSylvae(nombreAccion)
-
     try {
         const res  = await fetch(`${API}/accion`, {
-            method  : 'POST',
-            headers : { 'Content-Type': 'application/json' },
-            body    : JSON.stringify({ nombreAccion })
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ nombreAccion })
         })
         const data = await res.json()
-
         if (data.exito) {
-            // verificar evolución
             const faseAnterior = estado.datosCriatura?.fase
             const faseNueva    = data.datos?.fase
-
             if (faseAnterior !== faseNueva) {
                 GestorAudio.reproducirEvento('/assets/sounds/eventos/evolucion.mp3', 4000)
                 mostrarNotificacion(`✨ ¡${data.datos.nombre} ha evolucionado a ${obtenerLabelFase(faseNueva, data.datos.tipoEvolucion)}!`)
             }
-
             estado.datosCriatura = data.datos
             actualizarJuego(data.datos)
             mostrarNotificacion(data.mensaje)
-
-            // mostrar logros obtenidos
             if (data.logros && data.logros.length > 0) {
-                data.logros.forEach((logro, i) => {
-                    setTimeout(() => {
-                        mostrarLogro(logro)
-                    }, i * 2500)
-                })
+                data.logros.forEach((logro, i) => setTimeout(() => mostrarLogro(logro), i * 2500))
             }
-
             CooldownManager.iniciar(nombreAccion, cooldownSegundos)
-
         } else {
             mostrarNotificacion(data.mensaje, true)
             btn.disabled = false
@@ -1264,15 +902,9 @@ function iniciarTickAutomatico() {
             const data = await res.json()
             if (data.exito) {
                 actualizarJuego(data.datos)
-
-                // mostrar evento especial si existe
-                if (data.evento) {
-                    setTimeout(() => mostrarEventoEspecial(data.evento), 1000)
-                }
+                if (data.evento) setTimeout(() => mostrarEventoEspecial(data.evento), 1000)
             }
-        } catch (error) {
-            console.error('Error en tick:', error)
-        }
+        } catch (error) { console.error('Error en tick:', error) }
     }, 30000)
 }
 
@@ -1286,9 +918,7 @@ function iniciarParticulas(datos) {
     if (!contenedorParticulas) {
         contenedorParticulas = document.createElement('div')
         contenedorParticulas.id = 'particulas-contenedor'
-        contenedorParticulas.style.cssText = `
-            position:fixed; inset:0; pointer-events:none; z-index:5; overflow:hidden;
-        `
+        contenedorParticulas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden;'
         document.getElementById('pantalla-juego').appendChild(contenedorParticulas)
     }
     actualizarParticulas(datos?.bosque?.salud ?? 100, datos?.tipoEvolucion)
@@ -1298,19 +928,12 @@ function actualizarParticulas(saludBosque, tipo) {
     if (!contenedorParticulas) return
     contenedorParticulas.innerHTML = ''
     if (estado.particulasInterval) clearInterval(estado.particulasInterval)
-
     if (saludBosque >= 75) {
-        estado.particulasInterval = setInterval(() => {
-            crearMariposa()
-            if (Math.random() > 0.5) crearLuciernaga()
-        }, 800)
+        estado.particulasInterval = setInterval(() => { crearMariposa(); if (Math.random() > 0.5) crearLuciernaga() }, 800)
     } else if (saludBosque >= 50) {
         estado.particulasInterval = setInterval(() => crearHoja(), 600)
     } else if (saludBosque >= 25) {
-        estado.particulasInterval = setInterval(() => {
-            crearHojaSeca()
-            if (Math.random() > 0.7) crearHoja()
-        }, 400)
+        estado.particulasInterval = setInterval(() => { crearHojaSeca(); if (Math.random() > 0.7) crearHoja() }, 400)
     } else {
         estado.particulasInterval = setInterval(() => crearCeniza(), 300)
     }
@@ -1318,9 +941,9 @@ function actualizarParticulas(saludBosque, tipo) {
 
 function crearMariposa() {
     const el = document.createElement('div')
-    const emojis = ['🦋', '🦋', '🌸', '🦋']
+    const emojis = ['🦋','🦋','🌸','🦋']
     const duration = 6000 + Math.random() * 4000
-    el.textContent = emojis[Math.floor(Math.random() * emojis.length)]
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)]
     el.style.cssText = `position:absolute;font-size:${0.8+Math.random()*0.8}rem;left:${Math.random()*window.innerWidth}px;bottom:-30px;opacity:0;animation:volarMariposa ${duration}ms ease-in-out forwards;pointer-events:none;`
     contenedorParticulas.appendChild(el)
     setTimeout(() => el.remove(), duration)
@@ -1373,9 +996,7 @@ function mostrarNotificacion(mensaje, esError = false) {
     dom.notificacion.classList.toggle('error', esError)
     dom.notificacion.classList.add('visible')
     if (notifTimeout) clearTimeout(notifTimeout)
-    notifTimeout = setTimeout(() => {
-        dom.notificacion.classList.remove('visible')
-    }, 3000)
+    notifTimeout = setTimeout(() => dom.notificacion.classList.remove('visible'), 3000)
 }
 
 // ════════════════════════════════════════════
@@ -1383,29 +1004,13 @@ function mostrarNotificacion(mensaje, esError = false) {
 // ════════════════════════════════════════════
 
 function mostrarLogro(logro) {
-    // crear elemento de logro
     const el = document.createElement('div')
-    el.className  = 'logro-notificacion'
-    el.innerHTML  = `
-        <div class="logro-icono">${logro.icono}</div>
-        <div class="logro-contenido">
-            <div class="logro-titulo">${logro.titulo}</div>
-            <div class="logro-mensaje">${logro.mensaje}</div>
-        </div>
-    `
+    el.className = 'logro-notificacion'
+    el.innerHTML = `<div class="logro-icono">${logro.icono}</div><div class="logro-contenido"><div class="logro-titulo">${logro.titulo}</div><div class="logro-mensaje">${logro.mensaje}</div></div>`
     document.body.appendChild(el)
-
-    // sonido especial de logro
     GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 2000)
-
-    // animación entrada
     setTimeout(() => el.classList.add('visible'), 100)
-
-    // animación salida
-    setTimeout(() => {
-        el.classList.remove('visible')
-        setTimeout(() => el.remove(), 500)
-    }, 4000)
+    setTimeout(() => { el.classList.remove('visible'); setTimeout(() => el.remove(), 500) }, 4000)
 }
 
 // ════════════════════════════════════════════
@@ -1414,30 +1019,12 @@ function mostrarLogro(logro) {
 
 function mostrarEventoEspecial(evento) {
     if (!evento) return
-
     const el = document.createElement('div')
     el.className = 'evento-especial'
-    el.innerHTML = `
-        <div class="evento-fondo"></div>
-        <div class="evento-contenido">
-            <div class="evento-icono">${evento.icono}</div>
-            <div class="evento-titulo">${evento.titulo}</div>
-            <div class="evento-mensaje">${evento.mensaje}</div>
-            <button class="evento-cerrar" onclick="this.parentElement.parentElement.remove()">
-                Continuar →
-            </button>
-        </div>
-    `
+    el.innerHTML = `<div class="evento-fondo"></div><div class="evento-contenido"><div class="evento-icono">${evento.icono}</div><div class="evento-titulo">${evento.titulo}</div><div class="evento-mensaje">${evento.mensaje}</div><button class="evento-cerrar" onclick="this.parentElement.parentElement.remove()">Continuar →</button></div>`
     document.body.appendChild(el)
     setTimeout(() => el.classList.add('visible'), 100)
-
-    // auto cerrar después de 8 segundos
-    setTimeout(() => {
-        el.classList.remove('visible')
-        setTimeout(() => el.remove(), 500)
-    }, 8000)
-
-    // sonido especial
+    setTimeout(() => { el.classList.remove('visible'); setTimeout(() => el.remove(), 500) }, 8000)
     GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 3000)
 }
 
@@ -1450,75 +1037,36 @@ function mostrarPantallaFin(datos) {
     if (estado.particulasInterval) clearInterval(estado.particulasInterval)
     CooldownManager.limpiarTodos()
     GestorAudio.detenerTodo()
-
     const resumen = datos.resumen
     const exitoso = datos.estado?.nombre === 'retorno'
-
-    // música de fin
-    setTimeout(() => {
-        GestorAudio.reproducirMusica(
-            exitoso
-                ? '/assets/sounds/eventos/retorno.mp3'
-                : '/assets/sounds/ambiente/bosque_enfermo.mp3'
-        )
-    }, 500)
-
-    // ── Llenar pantalla de resumen ─────────────
-
-    // icono y título
+    setTimeout(() => GestorAudio.reproducirMusica(exitoso ? '/assets/sounds/eventos/retorno.mp3' : '/assets/sounds/ambiente/bosque_enfermo.mp3'), 500)
     document.getElementById('fin-icono').textContent  = exitoso ? '✨' : '💔'
-    document.getElementById('fin-titulo').textContent = exitoso
-        ? 'El ciclo se completa'
-        : 'El bosque se ha oscurecido'
-
-    // imagen de la criatura
+    document.getElementById('fin-titulo').textContent = exitoso ? 'El ciclo se completa' : 'El bosque se ha oscurecido'
     const imgFin = document.getElementById('fin-criatura-img')
-    if (imgFin) {
-        imgFin.src = datos.imagenActual || '/assets/images/criatura/huevo.png'
-    }
-
-    // aura de la criatura final
+    if (imgFin) imgFin.src = datos.imagenActual || '/assets/images/criatura/huevo.png'
     const auraFin = document.getElementById('fin-criatura-aura')
-    if (auraFin) {
-        const color = obtenerColorTipo(datos.tipoEvolucion)
-        auraFin.style.background =
-            `radial-gradient(circle, ${color} 0%, transparent 70%)`
-    }
-
-    // stats
-    document.getElementById('fin-dias').textContent =
-        `${resumen?.diasVividos ?? 0}/${resumen?.diasMaximos ?? 15}`
-
-    document.getElementById('fin-bosque').textContent =
-        `${datos.bosque?.salud ?? 0}%`
-
+    if (auraFin) auraFin.style.background = `radial-gradient(circle, ${obtenerColorTipo(datos.tipoEvolucion)} 0%, transparent 70%)`
+    document.getElementById('fin-dias').textContent    = `${resumen?.diasVividos ?? 0}/${resumen?.diasMaximos ?? 15}`
+    document.getElementById('fin-bosque').textContent  = `${datos.bosque?.salud ?? 0}%`
     if (resumen?.logroMaximo) {
-        document.getElementById('fin-logro-icono').textContent =
-            resumen.logroMaximo.icono
-        document.getElementById('fin-logro').textContent =
-            resumen.logroMaximo.nombre
+        document.getElementById('fin-logro-icono').textContent = resumen.logroMaximo.icono
+        document.getElementById('fin-logro').textContent       = resumen.logroMaximo.nombre
     }
-
-    // evolución
-    const labelEvolucion = obtenerLabelFase(datos.fase, datos.tipoEvolucion)
-    document.getElementById('fin-evolucion-valor').textContent = labelEvolucion
-
-    // mensaje
-    document.getElementById('fin-mensaje').textContent =
-        resumen?.mensaje || 'El bosque recuerda cada momento de cuidado.'
-
+    document.getElementById('fin-evolucion-valor').textContent = obtenerLabelFase(datos.fase, datos.tipoEvolucion)
+    document.getElementById('fin-mensaje').textContent = resumen?.mensaje || 'El bosque recuerda cada momento de cuidado.'
     mostrarPantalla('fin')
 }
 
 dom.btnReiniciar.addEventListener('click', async () => {
     try { await fetch(`${API}/reiniciar`, { method: 'DELETE' }) } catch(e) {}
-    estado.datosCriatura  = null
+    estado.datosCriatura = null
     estado.estadoAnterior = null
     dom.inputNombre.value = ''
     if (contenedorParticulas) contenedorParticulas.innerHTML = ''
     CooldownManager.limpiarTodos()
     GestorAudio.pausarMusica()
     mostrarPantalla('crear')
+    setTimeout(() => Huevo.init(), 300)
 })
 
 document.getElementById('btn-ver-historial')?.addEventListener('click', () => {
@@ -1536,98 +1084,277 @@ const historialContenido = document.getElementById('historial-contenido')
 
 btnAbrirHistorial?.addEventListener('click', async () => {
     panelHistorial.classList.toggle('oculto')
-    if (!panelHistorial.classList.contains('oculto')) {
-        await cargarHistorial()
-    }
+    if (!panelHistorial.classList.contains('oculto')) await cargarHistorial()
 })
 
-btnCerrarHistorial?.addEventListener('click', () => {
-    panelHistorial.classList.add('oculto')
-})
+btnCerrarHistorial?.addEventListener('click', () => panelHistorial.classList.add('oculto'))
 
 async function cargarHistorial() {
     try {
         const res  = await fetch(`${API}/estado`)
         const data = await res.json()
         if (!data.exito) return
-
         const registros = data.datos.historial || []
         historialContenido.innerHTML = ''
-
         if (registros.length === 0) {
-            historialContenido.innerHTML =
-                '<p style="color:var(--color-texto-suave);font-size:0.8rem;text-align:center;padding:1rem">Sin registros aún</p>'
+            historialContenido.innerHTML = '<p style="color:var(--color-texto-suave);font-size:0.8rem;text-align:center;padding:1rem">Sin registros aún</p>'
             return
         }
-
-        const iconosTipo = {
-            ACCION   : '⚡',
-            EVOLUCION: '✨',
-            DIA      : '📅',
-            ESTADO   : '🔄'
-        }
-
+        const iconosTipo = { ACCION:'⚡', EVOLUCION:'✨', DIA:'📅', ESTADO:'🔄' }
         registros.forEach(reg => {
-            const el  = document.createElement('div')
+            const el = document.createElement('div')
             el.className = `historial-item ${reg.tipo}`
-
-            const tiempo = new Date(reg.timestamp).toLocaleTimeString('es', {
-                hour: '2-digit', minute: '2-digit'
-            })
-
+            const tiempo = new Date(reg.timestamp).toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' })
             let texto = ''
             if (reg.tipo === 'ACCION')    texto = `${reg.datos.accion} → ${reg.datos.mensaje}`
             if (reg.tipo === 'EVOLUCION') texto = `${reg.datos.de} → ${reg.datos.a}`
             if (reg.tipo === 'DIA')       texto = `Día ${reg.datos.dia} — ${reg.datos.estado}`
             if (reg.tipo === 'ESTADO')    texto = `${reg.datos.de || '?'} → ${reg.datos.a}`
-
-            el.innerHTML = `
-                <span class="historial-icono">${iconosTipo[reg.tipo] || '📌'}</span>
-                <div class="historial-texto">
-                    <span class="historial-accion">${texto}</span>
-                    <span class="historial-tiempo">${tiempo}</span>
-                </div>
-            `
+            el.innerHTML = `<span class="historial-icono">${iconosTipo[reg.tipo] || '📌'}</span><div class="historial-texto"><span class="historial-accion">${texto}</span><span class="historial-tiempo">${tiempo}</span></div>`
             historialContenido.appendChild(el)
         })
-
-    } catch (error) {
-        console.error('Error cargando historial:', error)
-    }
+    } catch (error) { console.error('Error cargando historial:', error) }
 }
 
-// mostrar botón historial solo en pantalla de juego
 function mostrarBotonesJuego(visible) {
-    const btn = document.getElementById('btn-abrir-historial')
-    if (btn) btn.style.display = visible ? 'flex' : 'none'
+    const btnH = document.getElementById('btn-abrir-historial')
+    const btnT = document.getElementById('btn-tienda')
+    const btnM = document.getElementById('btn-minijuegos')
+    if (btnH) btnH.style.display = visible ? 'flex' : 'none'
+    if (btnT) btnT.style.display = visible ? 'inline-flex' : 'none'
+    if (btnM) btnM.style.display = visible ? 'inline-flex' : 'none'
 }
 
 // ════════════════════════════════════════════
-// INICIALIZACIÓN
+// SISTEMA DE SEMILLAS Y TIENDA
 // ════════════════════════════════════════════
 
-async function inicializar() {
-    iniciarIntro()
-    mostrarPantalla('intro')
+function actualizarSemillas(cantidad) {
+    const el1 = document.getElementById('semillas-valor')
+    const el2 = document.getElementById('tienda-semillas')
+    if (el1) el1.textContent = cantidad
+    if (el2) el2.textContent = cantidad
+}
 
+document.getElementById('btn-tienda')?.addEventListener('click', () => {
+    document.getElementById('panel-tienda').classList.remove('oculto')
+})
+
+document.getElementById('btn-cerrar-tienda')?.addEventListener('click', () => {
+    document.getElementById('panel-tienda').classList.add('oculto')
+})
+
+document.querySelectorAll('.tienda-item .btn-comprar').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const item = btn.closest('.tienda-item').dataset.item
+        await comprarItemTienda(item, btn)
+    })
+})
+
+async function comprarItemTienda(item, btn) {
+    btn.disabled = true
+    btn.textContent = '...'
     try {
-        const res  = await fetch(`${API}/estado`)
+        const res  = await fetch(`${API}/comprar`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ item })
+        })
         const data = await res.json()
         if (data.exito) {
-            estado.datosCriatura = data.datos
-            GestorAudio.detenerTodo()
-            mostrarPantalla('juego')
+            actualizarSemillas(data.semillas)
             actualizarJuego(data.datos)
-            iniciarTickAutomatico()
-            iniciarParticulas(data.datos)
-            GestorAudio.reproducirMusica(
-                GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
-            )
+            mostrarNotificacion(data.mensaje)
+            document.getElementById('panel-tienda').classList.add('oculto')
+        } else {
+            mostrarNotificacion(data.mensaje, true)
         }
     } catch (error) {
-        console.log('No hay criatura activa, mostrando intro')
+        mostrarNotificacion('Error al conectar con la tienda', true)
+    } finally {
+        btn.disabled    = false
+        btn.textContent = 'Comprar'
     }
 }
+
+// ════════════════════════════════════════════
+// MINIJUEGOS CON ALDEANOS
+// ════════════════════════════════════════════
+
+const Minijuego = {
+    activo: false, puntos: 0, timer: null, intervalo: null,
+
+    abrir() {
+        document.getElementById('panel-minijuegos').classList.remove('oculto')
+        document.getElementById('area-minijuego').classList.add('oculto')
+        document.getElementById('mj-resultado').classList.add('oculto')
+    },
+
+    cerrar() {
+        document.getElementById('panel-minijuegos').classList.add('oculto')
+        this.limpiar()
+    },
+
+    limpiar() {
+        if (this.timer)     clearTimeout(this.timer)
+        if (this.intervalo) clearInterval(this.intervalo)
+        this.activo = false
+        this.puntos = 0
+        document.getElementById('mj-pantalla').innerHTML = ''
+    },
+
+    iniciarHierbas() {
+        this.limpiar()
+        this.activo = true
+        this.puntos = 0
+        const pantalla = document.getElementById('mj-pantalla')
+        document.getElementById('area-minijuego').classList.remove('oculto')
+        document.getElementById('mj-resultado').classList.add('oculto')
+        let tiempoRestante = 15
+        pantalla.innerHTML = `<div class="mj-timer" id="mj-timer">⏱ ${tiempoRestante}s | 🌿 0</div>`
+        this.intervalo = setInterval(() => {
+            if (!this.activo) return
+            const hierba = document.createElement('div')
+            hierba.className  = 'mj-objeto'
+            hierba.textContent = ['🌿','🍃','🌱','🌾'][Math.floor(Math.random()*4)]
+            hierba.style.left = `${10+Math.random()*80}%`
+            hierba.style.top  = `${10+Math.random()*70}%`
+            hierba.addEventListener('click', () => {
+                this.puntos++
+                const t = document.getElementById('mj-timer')
+                if (t) t.textContent = `⏱ ${tiempoRestante}s | 🌿 ${this.puntos}`
+                hierba.remove()
+                GestorAudio.reproducirEfecto('/assets/sounds/acciones/alimentar.mp3', 500)
+            })
+            pantalla.appendChild(hierba)
+            setTimeout(() => hierba.remove(), 2000)
+        }, 800)
+        const countdown = setInterval(() => {
+            tiempoRestante--
+            const t = document.getElementById('mj-timer')
+            if (t) t.textContent = `⏱ ${tiempoRestante}s | 🌿 ${this.puntos}`
+            if (tiempoRestante <= 0) clearInterval(countdown)
+        }, 1000)
+        this.timer = setTimeout(() => {
+            this.activo = false
+            clearInterval(this.intervalo)
+            this.mostrarResultado(Math.min(15, 5+this.puntos), `¡Recolectaste ${this.puntos} hierbas!`)
+        }, 15000)
+    },
+
+    iniciarRunas() {
+        this.limpiar()
+        this.activo = true
+        const pantalla = document.getElementById('mj-pantalla')
+        document.getElementById('area-minijuego').classList.remove('oculto')
+        const runas = ['🔥','💧','🌿','⚡','🌙','✨','🌀','💎']
+        const secuencia = [], respuesta = []
+        let mostrandoSecuencia = false, nivel = 1
+
+        const generarSecuencia = () => {
+            secuencia.push(runas[Math.floor(Math.random()*runas.length)])
+            mostrandoSecuencia = true
+            pantalla.innerHTML = `<div style="text-align:center;padding:1rem;color:var(--color-texto-suave);font-size:0.85rem">Memoriza la secuencia...</div><div class="runas-grid">${secuencia.map(r=>`<div class="runa-btn activa">${r}</div>`).join('')}</div>`
+            setTimeout(() => {
+                mostrandoSecuencia = false
+                respuesta.length = 0
+                pantalla.innerHTML = `<div style="text-align:center;padding:1rem;color:var(--color-texto);font-size:0.85rem">¡Repite la secuencia! (${secuencia.length} runas)</div><div class="runas-grid">${runas.map(r=>`<button class="runa-btn" data-runa="${r}">${r}</button>`).join('')}</div>`
+                pantalla.querySelectorAll('.runa-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (mostrandoSecuencia) return
+                        respuesta.push(btn.dataset.runa)
+                        const idx = respuesta.length - 1
+                        if (respuesta[idx] === secuencia[idx]) {
+                            btn.classList.add('correcta')
+                            setTimeout(() => btn.classList.remove('correcta'), 300)
+                            if (respuesta.length === secuencia.length) {
+                                nivel++
+                                if (nivel > 4) this.mostrarResultado(10+(nivel*2), `¡Completaste ${nivel-1} rondas!`)
+                                else setTimeout(generarSecuencia, 800)
+                            }
+                        } else {
+                            btn.classList.add('incorrecta')
+                            setTimeout(() => this.mostrarResultado(Math.max(5,nivel*3), `Fallaste en ronda ${nivel}. ¡Bien hecho!`), 500)
+                        }
+                    })
+                })
+            }, secuencia.length * 600 + 500)
+        }
+        generarSecuencia()
+    },
+
+    iniciarLuciernagas() {
+        this.limpiar()
+        this.activo = true
+        this.puntos = 0
+        const pantalla = document.getElementById('mj-pantalla')
+        document.getElementById('area-minijuego').classList.remove('oculto')
+        let tiempoRestante = 20
+        pantalla.innerHTML = `<div class="mj-timer" id="mj-timer">⏱ ${tiempoRestante}s | ✨ 0</div>`
+        this.intervalo = setInterval(() => {
+            if (!this.activo) return
+            const luc = document.createElement('div')
+            luc.className = 'mj-objeto'
+            luc.textContent = '✨'
+            luc.style.left = `${5+Math.random()*85}%`
+            luc.style.top  = `${5+Math.random()*75}%`
+            luc.style.transition = 'all 1.5s ease'
+            luc.addEventListener('click', () => {
+                this.puntos++
+                const t = document.getElementById('mj-timer')
+                if (t) t.textContent = `⏱ ${tiempoRestante}s | ✨ ${this.puntos}`
+                luc.remove()
+                GestorAudio.reproducirEfecto('/assets/sounds/acciones/meditar.mp3', 500)
+            })
+            pantalla.appendChild(luc)
+            setTimeout(() => { luc.style.left = `${5+Math.random()*85}%`; luc.style.top = `${5+Math.random()*75}%` }, 100)
+            setTimeout(() => luc.remove(), 2500)
+        }, 600)
+        const countdown = setInterval(() => {
+            tiempoRestante--
+            const t = document.getElementById('mj-timer')
+            if (t) t.textContent = `⏱ ${tiempoRestante}s | ✨ ${this.puntos}`
+            if (tiempoRestante <= 0) clearInterval(countdown)
+        }, 1000)
+        this.timer = setTimeout(() => {
+            this.activo = false
+            clearInterval(this.intervalo)
+            this.mostrarResultado(Math.min(18, 8+this.puntos), `¡Atrapaste ${this.puntos} luciérnagas!`)
+        }, 20000)
+    },
+
+    async mostrarResultado(semillas, mensaje) {
+        this.limpiar()
+        const resultado = document.getElementById('mj-resultado')
+        document.getElementById('mj-pantalla').innerHTML = ''
+        resultado.classList.remove('oculto')
+        resultado.innerHTML = `<div style="font-size:2rem">🎉</div><div>${mensaje}</div><div style="color:#7fff7f;font-size:1.5rem">+${semillas} 🌱</div>`
+        GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 2000)
+        try {
+            const res  = await fetch(`${API}/minijuego`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ semillasGanadas: semillas })
+            })
+            const data = await res.json()
+            if (data.exito) {
+                actualizarSemillas(data.semillas)
+                actualizarJuego(data.datos)
+                mostrarNotificacion(`+${semillas} 🌱 Semillas ganadas!`)
+            }
+        } catch (error) { console.error('Error al guardar semillas:', error) }
+        setTimeout(() => this.cerrar(), 3000)
+    }
+}
+
+document.getElementById('btn-minijuegos')?.addEventListener('click', () => Minijuego.abrir())
+document.getElementById('btn-cerrar-minijuegos')?.addEventListener('click', () => Minijuego.cerrar())
+document.querySelectorAll('.btn-jugar-mini').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const juego = btn.dataset.juego
+        if (juego === 'hierbas')     Minijuego.iniciarHierbas()
+        if (juego === 'runas')       Minijuego.iniciarRunas()
+        if (juego === 'luciernagas') Minijuego.iniciarLuciernagas()
+    })
+})
 
 // ════════════════════════════════════════════
 // PANTALLA TÍTULO
@@ -1635,82 +1362,52 @@ async function inicializar() {
 
 function iniciarParticulasTitulo() {
     if (!dom.tituloParticulas) return
-
     setInterval(() => {
-        const el       = document.createElement('div')
-        const emojis   = ['🦋', '🌸', '✨', '🍃', '🌿']
-        const emoji    = emojis[Math.floor(Math.random() * emojis.length)]
-        const startX   = Math.random() * window.innerWidth
+        const el = document.createElement('div')
+        const emojis = ['🦋','🌸','✨','🍃','🌿']
         const duration = 5000 + Math.random() * 5000
-
-        el.textContent = emoji
-        el.style.cssText = `
-            position   : absolute;
-            font-size  : ${0.6 + Math.random() * 1}rem;
-            left       : ${startX}px;
-            bottom     : -30px;
-            opacity    : 0;
-            animation  : volarMariposa ${duration}ms ease-in-out forwards;
-            pointer-events : none;
-        `
+        el.textContent = emojis[Math.floor(Math.random()*emojis.length)]
+        el.style.cssText = `position:absolute;font-size:${0.6+Math.random()*1}rem;left:${Math.random()*window.innerWidth}px;bottom:-30px;opacity:0;animation:volarMariposa ${duration}ms ease-in-out forwards;pointer-events:none;`
         dom.tituloParticulas.appendChild(el)
         setTimeout(() => el.remove(), duration)
     }, 600)
 }
 
-// botón comenzar juego
-document.getElementById('btn-titulo-comenzar').addEventListener('click', () => {
-
-    // arrancar música con interacción del usuario
+document.getElementById('btn-titulo-comenzar')?.addEventListener('click', () => {
     GestorAudio.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
-
-    // ocultar pantalla título con fade
     const pantallaTitulo = document.getElementById('pantalla-titulo')
     pantallaTitulo.style.transition = 'opacity 1s ease'
     pantallaTitulo.style.opacity    = '0'
-
     setTimeout(() => {
         pantallaTitulo.style.display = 'none'
         pantallaTitulo.classList.remove('activa')
-        // mostrar intro
         iniciarIntro()
         mostrarPantalla('intro')
     }, 1000)
 })
 
 // ════════════════════════════════════════════
-// INICIALIZACIÓN
+// INICIALIZACIÓN — ÚNICA
 // ════════════════════════════════════════════
 
 async function inicializar() {
-
-    // iniciar partículas de la pantalla título
     iniciarParticulasTitulo()
-
-    // verificar si ya existe una criatura activa
     try {
         const res  = await fetch(`${API}/estado`)
         const data = await res.json()
-
         if (data.exito) {
-            // hay criatura activa → saltar título e ir directo al juego
             const pantallaTitulo = document.getElementById('pantalla-titulo')
             pantallaTitulo.style.display = 'none'
             pantallaTitulo.classList.remove('activa')
-
             estado.datosCriatura = data.datos
             GestorAudio.detenerTodo()
             mostrarPantalla('juego')
             actualizarJuego(data.datos)
             iniciarTickAutomatico()
             iniciarParticulas(data.datos)
-            GestorAudio.reproducirMusica(
-                GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100)
-            )
+            GestorAudio.reproducirMusica(GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100))
         }
-        // si no hay criatura → se queda en pantalla título
     } catch (error) {
-        // no hay criatura → mostrar pantalla título normalmente
         console.log('Mostrando pantalla título')
     }
 }

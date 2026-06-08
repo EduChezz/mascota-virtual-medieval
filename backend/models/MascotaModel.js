@@ -100,6 +100,28 @@ const MascotaSchema = new mongoose.Schema({
         hablar    : { type: Date, default: null }
     },
 
+    semillas : {
+        type    : Number,
+        default : 10,
+        min     : 0,
+        max     : 999
+    },
+
+    // contador de acciones para consecuencias
+    contadorAcciones : {
+        alimentar : { type: Number, default: 0 },
+        jugar     : { type: Number, default: 0 },
+        dormir    : { type: Number, default: 0 },
+        meditar   : { type: Number, default: 0 },
+        hablar    : { type: Number, default: 0 }
+    },
+
+    // estados especiales
+    estadoEspecial : {
+        tipo      : { type: String, default: null },
+        diasRestantes : { type: Number, default: 0 }
+    },
+
     activa : {
         type    : Boolean,
         default : true

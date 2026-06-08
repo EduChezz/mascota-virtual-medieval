@@ -1557,3 +1557,280 @@ body {
     font-size : 0.6rem;
     color     : var(--color-texto-suave);
 }
+
+/* ══════════════════════════════════════════════
+   SEMILLAS Y TIENDA
+   ══════════════════════════════════════════════ */
+
+.header-semillas {
+    display     : flex;
+    align-items : center;
+    gap         : 0.4rem;
+    flex        : 1;
+}
+
+.semillas-icono { font-size: 1rem; }
+
+.semillas-valor {
+    font-size   : 1rem;
+    color       : #7fff7f;
+    font-weight : bold;
+    min-width   : 30px;
+}
+
+.btn-tienda,
+.btn-minijuegos {
+    background    : rgba(255,255,255,0.05);
+    border        : 1px solid var(--color-borde);
+    border-radius : 8px;
+    font-size     : 1.1rem;
+    cursor        : pointer;
+    padding       : 0.3rem 0.5rem;
+    transition    : var(--transicion);
+}
+
+.btn-tienda:hover,
+.btn-minijuegos:hover {
+    border-color : var(--color-acento2);
+    box-shadow   : var(--glow-dorado);
+    transform    : scale(1.1);
+}
+
+/* ── Modales ──────────────────────────────── */
+.panel-modal {
+    position        : fixed;
+    inset           : 0;
+    z-index         : 200;
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    background      : rgba(0,0,0,0.7);
+    backdrop-filter : blur(4px);
+    animation       : fadeIn 0.3s ease;
+}
+
+.panel-modal.oculto { display: none; }
+
+.modal-contenido {
+    background    : rgba(10, 10, 20, 0.98);
+    border        : 1px solid var(--color-borde);
+    border-radius : 20px;
+    padding       : 1.5rem;
+    max-width     : 600px;
+    width         : 90%;
+    max-height    : 80vh;
+    overflow-y    : auto;
+}
+
+.modal-header {
+    display         : flex;
+    align-items     : center;
+    justify-content : space-between;
+    margin-bottom   : 1.2rem;
+    padding-bottom  : 0.8rem;
+    border-bottom   : 1px solid var(--color-borde);
+}
+
+.modal-header h3 {
+    font-family : var(--font-principal);
+    color       : var(--color-acento2);
+    font-size   : 1.2rem;
+}
+
+.semillas-display {
+    font-size   : 1rem;
+    color       : #7fff7f;
+    font-weight : bold;
+}
+
+.modal-cerrar {
+    background  : transparent;
+    border      : none;
+    color       : var(--color-texto-suave);
+    font-size   : 1.2rem;
+    cursor      : pointer;
+    transition  : var(--transicion);
+}
+
+.modal-cerrar:hover { color: var(--color-acento); }
+
+/* ── Tienda grid ──────────────────────────── */
+.tienda-grid {
+    display               : grid;
+    grid-template-columns : repeat(auto-fill, minmax(140px, 1fr));
+    gap                   : 0.8rem;
+}
+
+.tienda-item {
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    gap            : 0.3rem;
+    padding        : 1rem 0.8rem;
+    background     : rgba(255,255,255,0.04);
+    border         : 1px solid var(--color-borde);
+    border-radius  : 12px;
+    text-align     : center;
+    transition     : var(--transicion);
+}
+
+.tienda-item:hover {
+    border-color : var(--color-acento2);
+    background   : rgba(200,169,110,0.08);
+}
+
+.item-icono   { font-size: 2rem; }
+.item-nombre  { font-size: 0.75rem; color: var(--color-texto); font-weight: bold; }
+.item-efecto  { font-size: 0.6rem; color: var(--color-texto-suave); }
+.item-costo   { font-size: 0.8rem; color: #7fff7f; font-weight: bold; }
+
+.btn-comprar {
+    margin-top    : 0.3rem;
+    padding       : 0.3rem 0.8rem;
+    background    : linear-gradient(135deg, #1a4a2e, #2d6e4e);
+    border        : 1px solid var(--color-acento);
+    border-radius : 10px;
+    color         : var(--color-acento);
+    font-size     : 0.7rem;
+    cursor        : pointer;
+    transition    : var(--transicion);
+}
+
+.btn-comprar:hover {
+    transform  : scale(1.05);
+    box-shadow : var(--glow-verde);
+}
+
+/* ── Minijuegos ───────────────────────────── */
+.minijuego-subtitulo {
+    color         : var(--color-texto-suave);
+    font-size     : 0.85rem;
+    text-align    : center;
+    margin-bottom : 1rem;
+    font-style    : italic;
+}
+
+.minijuegos-grid {
+    display               : grid;
+    grid-template-columns : repeat(auto-fill, minmax(160px, 1fr));
+    gap                   : 0.8rem;
+    margin-bottom         : 1rem;
+}
+
+.minijuego-card {
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    gap            : 0.3rem;
+    padding        : 1rem;
+    background     : rgba(255,255,255,0.04);
+    border         : 1px solid var(--color-borde);
+    border-radius  : 12px;
+    text-align     : center;
+    transition     : var(--transicion);
+}
+
+.minijuego-card:hover {
+    border-color : var(--color-acento);
+    background   : rgba(45,110,78,0.08);
+}
+
+.mj-icono      { font-size: 2.5rem; }
+.mj-nombre     { font-size: 0.85rem; color: var(--color-texto); font-weight: bold; }
+.mj-desc       { font-size: 0.65rem; color: var(--color-texto-suave); }
+.mj-recompensa { font-size: 0.7rem; color: #7fff7f; }
+.mj-energia    { font-size: 0.65rem; color: #ff9f4a; }
+
+.btn-jugar-mini {
+    margin-top    : 0.5rem;
+    padding       : 0.4rem 1rem;
+    background    : linear-gradient(135deg, #1a4a2e, #2d6e4e);
+    border        : 1px solid var(--color-acento);
+    border-radius : 10px;
+    color         : var(--color-acento);
+    font-size     : 0.75rem;
+    cursor        : pointer;
+    transition    : var(--transicion);
+}
+
+.btn-jugar-mini:hover {
+    transform  : scale(1.05);
+    box-shadow : var(--glow-verde);
+}
+
+/* ── Área de minijuego activo ─────────────── */
+.area-minijuego {
+    margin-top    : 1rem;
+    border-top    : 1px solid var(--color-borde);
+    padding-top   : 1rem;
+}
+
+.mj-pantalla {
+    min-height    : 200px;
+    background    : rgba(0,0,0,0.3);
+    border-radius : 12px;
+    border        : 1px solid var(--color-borde);
+    position      : relative;
+    overflow      : hidden;
+    cursor        : crosshair;
+}
+
+.mj-resultado {
+    text-align  : center;
+    padding     : 1rem;
+    font-family : var(--font-principal);
+    font-size   : 1.2rem;
+    color       : var(--color-acento2);
+}
+
+.mj-resultado.oculto { display: none; }
+
+/* objetos clickeables en minijuegos */
+.mj-objeto {
+    position      : absolute;
+    font-size     : 1.8rem;
+    cursor        : pointer;
+    transition    : transform 0.1s ease;
+    user-select   : none;
+    animation     : fadeIn 0.3s ease;
+}
+
+.mj-objeto:hover { transform: scale(1.2); }
+
+.mj-objeto:active {
+    transform : scale(0.8);
+    opacity   : 0;
+}
+
+/* temporizador */
+.mj-timer {
+    text-align  : center;
+    font-size   : 1.5rem;
+    color       : var(--color-acento);
+    font-weight : bold;
+    margin-bottom: 0.5rem;
+}
+
+/* runas */
+.runas-grid {
+    display               : grid;
+    grid-template-columns : repeat(4, 1fr);
+    gap                   : 0.5rem;
+    padding               : 1rem;
+}
+
+.runa-btn {
+    font-size     : 1.5rem;
+    padding       : 0.8rem;
+    background    : rgba(255,255,255,0.05);
+    border        : 1px solid var(--color-borde);
+    border-radius : 8px;
+    cursor        : pointer;
+    transition    : var(--transicion);
+    text-align    : center;
+}
+
+.runa-btn:hover   { border-color: var(--color-acento); transform: scale(1.05); }
+.runa-btn.activa  { background: rgba(45,110,78,0.4); border-color: var(--color-acento); }
+.runa-btn.correcta{ background: rgba(45,200,78,0.4); border-color: #7fff7f; }
+.runa-btn.incorrecta{ background: rgba(200,45,45,0.4); border-color: #ff6b6b; }

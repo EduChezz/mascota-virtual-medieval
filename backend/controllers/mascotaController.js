@@ -73,7 +73,8 @@ function construirRespuesta(criatura, bosque, historial, doc) {
         imagenActual  : criatura.getImagenActual(),
         tendencia     : datos.tendencia,
         urgencias     : datos.urgencias,
-        resumen       : datos.resumen
+        resumen       : datos.resumen,
+        semillas      : doc.semillas || 0 
     }
 }
 
@@ -270,6 +271,114 @@ export async function ejecutarTick(req, res) {
 
     } catch (error) {
         console.error('Error en tick:', error)
+        res.status(500).json({ exito: false, mensaje: error.message })
+    }
+}
+
+// ── POST /api/mascota/minijuego ───────────────
+export async function completarMinijuego(req, res) {
+    try {
+        const { semillasGanadas } = req.body
+
+        if (!semillasGanadas || semillasGanadas < 0 || semillasGanadas > 50) {
+            return res.status(400).json({
+                exito   : false,
+                mensaje : 'Semillas inválidas'
+            })
+        }
+
+        const doc = await MascotaModel.findOne({ activa: true })
+        if (!doc) {
+            return res.status(404).json({
+                exito   : false,
+                mensaje : 'No hay criatura activa'
+            })
+        }
+
+        const { criatura, bosque, historial } = reconstruirCriatura(doc)
+
+        // agregar semillas
+        doc.semillas = Math.min(999, (doc.semillas || 0) + semillasGanadas)
+
+        // la criatura pierde energía por trabajar
+        criatura.getEstadisticas().modificar('energia', -10)
+        criatura.getEstadisticas().modificar('vinculo', +5)
+
+        await guardarCriatura(doc, criatura, bosque, historial)
+
+        return res.json({
+            exito    : true,
+            mensaje  : `¡Ganaste ${semillasGanadas} semillas de luz! 🌱`,
+            semillas : doc.semillas,
+            datos    : construirRespuesta(criatura, bosque, historial, doc)
+        })
+
+    } catch (error) {
+        console.error('Error en minijuego:', error)
+        res.status(500).json({ exito: false, mensaje: error.message })
+    }
+}
+
+// ── POST /api/mascota/comprar ─────────────────
+export async function comprarItem(req, res) {
+    try {
+        const { item } = req.body
+
+        const costos = {
+            hierba_fresca   : 3,
+            fruta_encantada : 8,
+            miel_bosque     : 15,
+            nectar_sagrado  : 25,
+            pocion_energia  : 10,
+            pocion_vinculo  : 15,
+            pocion_curativa : 20
+        }
+
+        const costo = costos[item]
+        if (!costo) {
+            return res.status(400).json({
+                exito   : false,
+                mensaje : 'Item no encontrado en la tienda'
+            })
+        }
+
+        const doc = await MascotaModel.findOne({ activa: true })
+        if (!doc) {
+            return res.status(404).json({
+                exito   : false,
+                mensaje : 'No hay criatura activa'
+            })
+        }
+
+        // verificar semillas suficientes
+        if ((doc.semillas || 0) < costo) {
+            return res.status(400).json({
+                exito   : false,
+                mensaje : `No tienes suficientes semillas. Necesitas ${costo} 🌱`
+            })
+        }
+
+        const { criatura, bosque, historial } = reconstruirCriatura(doc)
+
+        // descontar semillas
+        doc.semillas = (doc.semillas || 0) - costo
+
+        // aplicar efectos del item
+        const accion    = AccionFactory.crear('comprar', { item })
+        const resultado = accion.ejecutar(criatura.getEstadisticas())
+
+        await guardarCriatura(doc, criatura, bosque, historial)
+
+        return res.json({
+            exito    : true,
+            mensaje  : resultado.mensaje,
+            semillas : doc.semillas,
+            efectos  : resultado.efectos,
+            datos    : construirRespuesta(criatura, bosque, historial, doc)
+        })
+
+    } catch (error) {
+        console.error('Error al comprar:', error)
         res.status(500).json({ exito: false, mensaje: error.message })
     }
 }

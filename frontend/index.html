@@ -240,6 +240,16 @@
                 <span id="fase-criatura" class="criatura-fase">—</span>
                 <span id="badge-tendencia" class="badge-tendencia oculto"></span>
             </div>
+            <div class="header-semillas" id="header-semillas">
+                <span class="semillas-icono">🌱</span>
+                <span class="semillas-valor" id="semillas-valor">0</span>
+                <button class="btn-tienda" id="btn-tienda" title="Tienda del Bosque">
+                    🛒
+                </button>
+                <button class="btn-minijuegos" id="btn-minijuegos" title="Ayudar aldeanos">
+                    🏘️
+                </button>
+            </div>
             <div class="header-dias">
                 <span class="header-label">Día</span>
                 <span id="dias-vividos" class="dias-numero">0</span>
@@ -474,5 +484,128 @@
     </button>
 
     <script src="/js/app.js"></script>
+    <!-- ══════════════════════════════════════ -->
+    <!-- TIENDA DEL BOSQUE                     -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="panel-tienda" class="panel-modal oculto">
+        <div class="modal-contenido">
+            <div class="modal-header">
+                <h3>🛒 Tienda del Bosque</h3>
+                <span class="semillas-display">🌱 <span id="tienda-semillas">0</span></span>
+                <button class="modal-cerrar" id="btn-cerrar-tienda">✕</button>
+            </div>
+            <div class="tienda-grid">
+
+                <div class="tienda-item" data-item="hierba_fresca">
+                    <div class="item-icono">🍃</div>
+                    <div class="item-nombre">Hierba Fresca</div>
+                    <div class="item-efecto">Hambre -20</div>
+                    <div class="item-costo">🌱 3</div>
+                    <button class="btn-comprar">Comprar</button>
+                </div>
+
+                <div class="tienda-item" data-item="fruta_encantada">
+                    <div class="item-icono">🍎</div>
+                    <div class="item-nombre">Fruta Encantada</div>
+                    <div class="item-efecto">Hambre -40, Espíritu +10</div>
+                    <div class="item-costo">🌱 8</div>
+                    <button class="btn-comprar">Comprar</button>
+                </div>
+
+                <div class="tienda-item" data-item="miel_bosque">
+                    <div class="item-icono">🍯</div>
+                    <div class="item-nombre">Miel del Bosque</div>
+                    <div class="item-efecto">Hambre -60, Vitalidad +20</div>
+                    <div class="item-costo">🌱 15</div>
+                    <button class="btn-comprar">Comprar</button>
+                </div>
+
+                <div class="tienda-item" data-item="nectar_sagrado">
+                    <div class="item-icono">🌺</div>
+                    <div class="item-nombre">Néctar Sagrado</div>
+                    <div class="item-efecto">Hambre -100, Todo +10</div>
+                    <div class="item-costo">🌱 25</div>
+                    <button class="btn-comprar">Comprar</button>
+                </div>
+
+                <div class="tienda-item" data-item="pocion_energia">
+                    <div class="item-icono">💊</div>
+                    <div class="item-nombre">Poción de Energía</div>
+                    <div class="item-efecto">Energía +50</div>
+                    <div class="item-costo">🌱 10</div>
+                    <button class="btn-comprar">Comprar</button>
+                </div>
+
+                <div class="tienda-item" data-item="pocion_vinculo">
+                    <div class="item-icono">💜</div>
+                    <div class="item-nombre">Poción de Vínculo</div>
+                    <div class="item-efecto">Vínculo +30</div>
+                    <div class="item-costo">🌱 15</div>
+                    <button class="btn-comprar">Comprar</button>
+                </div>
+
+                <div class="tienda-item" data-item="pocion_curativa">
+                    <div class="item-icono">🧪</div>
+                    <div class="item-nombre">Poción Curativa</div>
+                    <div class="item-efecto">Vitalidad +30, Cura enfermedad</div>
+                    <div class="item-costo">🌱 20</div>
+                    <button class="btn-comprar">Comprar</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANEL MINIJUEGOS                      -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="panel-minijuegos" class="panel-modal oculto">
+        <div class="modal-contenido">
+            <div class="modal-header">
+                <h3>🏘️ Aldeanos del Bosque</h3>
+                <button class="modal-cerrar" id="btn-cerrar-minijuegos">✕</button>
+            </div>
+            <p class="minijuego-subtitulo">
+                Ayuda a los aldeanos y gana 🌱 Semillas de Luz
+            </p>
+
+            <div class="minijuegos-grid">
+
+                <div class="minijuego-card" id="minijuego-hierbas">
+                    <div class="mj-icono">🌿</div>
+                    <div class="mj-nombre">Recolecta Hierbas</div>
+                    <div class="mj-desc">Haz click en las hierbas que aparecen</div>
+                    <div class="mj-recompensa">🌱 5-15 semillas</div>
+                    <div class="mj-energia">⚡ -10 energía a Sylvae</div>
+                    <button class="btn-jugar-mini" data-juego="hierbas">¡Jugar!</button>
+                </div>
+
+                <div class="minijuego-card" id="minijuego-runas">
+                    <div class="mj-icono">🔮</div>
+                    <div class="mj-nombre">Memoriza las Runas</div>
+                    <div class="mj-desc">Repite la secuencia de runas</div>
+                    <div class="mj-recompensa">🌱 10-20 semillas</div>
+                    <div class="mj-energia">⚡ -5 energía a Sylvae</div>
+                    <button class="btn-jugar-mini" data-juego="runas">¡Jugar!</button>
+                </div>
+
+                <div class="minijuego-card" id="minijuego-luciernagas">
+                    <div class="mj-icono">✨</div>
+                    <div class="mj-nombre">Atrapa Luciérnagas</div>
+                    <div class="mj-desc">Atrapa las luciérnagas que vuelan</div>
+                    <div class="mj-recompensa">🌱 8-18 semillas</div>
+                    <div class="mj-energia">⚡ -8 energía a Sylvae</div>
+                    <button class="btn-jugar-mini" data-juego="luciernagas">¡Jugar!</button>
+                </div>
+
+            </div>
+
+            <!-- área de juego activo -->
+            <div id="area-minijuego" class="area-minijuego oculto">
+                <div id="mj-pantalla" class="mj-pantalla"></div>
+                <div id="mj-resultado" class="mj-resultado oculto"></div>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>
