@@ -21,7 +21,9 @@ function reconstruirCriatura(doc) {
         diasVividos   : doc.diasVividos,
         diasMaximos   : doc.diasMaximos,
         estadisticas  : doc.estadisticas,
-        createdAt     : doc.createdAt
+        createdAt     : doc.createdAt,
+        logrosObtenidos  : doc.logrosObtenidos  || [],   
+        contadorAcciones : doc.contadorAcciones || {}    
     })
 
     const bosque = Bosque.getInstance()
@@ -41,15 +43,20 @@ function reconstruirCriatura(doc) {
 // ════════════════════════════════════════════
 
 async function guardarCriatura(doc, criatura, bosque, historial) {
-    doc.nombre        = criatura.getNombre()
-    doc.fase          = criatura.getFase()
-    doc.tipoEvolucion = criatura.getTipoEvolucion()
-    doc.diasVividos   = criatura.getDiasVividos()
-    doc.estadisticas  = criatura.getEstadisticas().toObject()
-    doc.estado        = criatura.getEstado().getNombre()
-    doc.imagenActual  = criatura.getImagenActual()
-    doc.bosque        = bosque.toObject()
-    doc.historial     = historial.getRegistros(50)
+    const datos = criatura.toObject()
+    doc.nombre           = criatura.getNombre()
+    doc.fase             = criatura.getFase()
+    doc.tipoEvolucion    = criatura.getTipoEvolucion()
+    doc.diasVividos      = criatura.getDiasVividos()
+    doc.estadisticas     = criatura.getEstadisticas().toObject()
+    doc.estado           = criatura.getEstado().getNombre()
+    doc.imagenActual     = criatura.getImagenActual()
+    doc.bosque           = bosque.toObject()
+    doc.historial        = historial.getRegistros(50)
+    doc.logrosObtenidos  = datos.logrosObtenidos  || []  
+    doc.contadorAcciones = datos.contadorAcciones || {}   
+    doc.markModified('logrosObtenidos')
+    doc.markModified('contadorAcciones')
     await doc.save()
     return doc
 }
@@ -224,6 +231,7 @@ export async function ejecutarAccion(req, res) {
         return res.json({
             exito   : true,
             mensaje : resultado.resultado.mensaje,
+            logros  : resultado.logros || [],        // ← agregar
             datos   : {
                 ...construirRespuesta(criatura, bosque, historial, doc),
                 efectos : resultado.resultado.efectos

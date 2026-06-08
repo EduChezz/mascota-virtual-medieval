@@ -425,7 +425,9 @@ export class Criatura {
             tendencia     : this.estadisticas.getTendenciaEvolucion(),
             urgencias     : this.estadisticas.getUrgencias(),
             resumen       : this._generarResumen(),
-            createdAt     : this.createdAt
+            createdAt     : this.createdAt,
+            logrosObtenidos  : this._logrosObtenidos,   
+            contadorAcciones : this._contadorAcciones    
         }
     }
 
