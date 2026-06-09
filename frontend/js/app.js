@@ -779,7 +779,7 @@ function actualizarFondoBosque(salud) {
 function actualizarImagenCriatura(imagenActual, fase, tipo) {
     dom.criaturaSprite.innerHTML = ''
     const img = document.createElement('img')
-    img.src   = imagenActual || '/assets/images/criatura/sylvae_base_paz.gif'
+    img.src   = imagenActual || '/assets/images/criatura/huevo.png'
     img.alt   = 'Sylvae'
     img.onerror = () => { dom.criaturaSprite.innerHTML = fase === 'huevo' ? '🥚' : '🐾'; dom.criaturaSprite.style.fontSize = '7rem' }
     dom.criaturaSprite.appendChild(img)
