@@ -41,12 +41,32 @@ let modoActual = 'normal'
 // ════════════════════════════════════════════
 
 const GestorAudio = {
-    canales : { musica: null, efecto: null, criatura: null },
+    canales   : { musica: null, efecto: null, criatura: null },
     volumenes : { musica: 0.4, efecto: 0.6, criatura: 0.25 },
+    silenciado : false,
     ultimaSonidoCriatura : 0,
     cooldownCriatura     : 45000,
 
+    silenciar() {
+        this.silenciado = true
+        Object.values(this.canales).forEach(c => { if (c) c.volume = 0 })
+        const btn = document.getElementById('btn-silenciar')
+        if (btn) btn.textContent = '🔇'
+    },
+
+    activar() {
+        this.silenciado = false
+        if (this.canales.musica)   this.canales.musica.volume   = this.volumenes.musica
+        if (this.canales.efecto)   this.canales.efecto.volume   = this.volumenes.efecto
+        if (this.canales.criatura) this.canales.criatura.volume = this.volumenes.criatura
+        const btn = document.getElementById('btn-silenciar')
+        if (btn) btn.textContent = '🔊'
+    },
+
+    toggleSilencio() { this.silenciado ? this.activar() : this.silenciar() },
+
     reproducirMusica(ruta) {
+        if (this.silenciado) return
         if (this.canales.musica?.src?.includes(ruta)) return
         this._fadeOut(this.canales.musica, 2000, () => {
             this.canales.musica        = new Audio(ruta)
@@ -71,6 +91,7 @@ const GestorAudio = {
     },
 
     reproducirEfecto(ruta, duracionMax = 30000) {
+        if (this.silenciado) return
         if (this.canales.efecto) {
             this.canales.efecto.pause()
             this.canales.efecto = null
@@ -96,6 +117,7 @@ const GestorAudio = {
     },
 
     reproducirCriatura(ruta) {
+        if (this.silenciado) return
         const ahora = Date.now()
         if (ahora - this.ultimaSonidoCriatura < this.cooldownCriatura) return
         this.ultimaSonidoCriatura    = ahora
@@ -316,23 +338,73 @@ const dom = {
     btnTituloContinuar : document.getElementById('btn-titulo-continuar'),
     continuarInfo      : document.getElementById('continuar-info'),
     pantallaTitulo     : document.getElementById('pantalla-titulo'),
-    tituloParticulas   : document.getElementById('titulo-particulas')
+    tituloParticulas   : document.getElementById('titulo-particulas'),
+    btnSilenciar       : document.getElementById('btn-silenciar')
 }
 
 // ════════════════════════════════════════════
 // BOTÓN MODO DEMO / NORMAL
 // ════════════════════════════════════════════
 
+let tickDemoInterval = null
+
+function activarModoDemo() {
+    modoActual = 'demo'
+    dom.btnModo.querySelector('.accion-label').textContent = '⚡ Demo ON'
+    dom.btnModo.classList.add('demo-activo')
+    mostrarNotificacion('⚡ Modo Demo — cooldowns 5s, ticks rápidos, avance manual')
+
+    // Tick cada 3 segundos en demo
+    if (estado.tickInterval) clearInterval(estado.tickInterval)
+    if (tickDemoInterval)    clearInterval(tickDemoInterval)
+    tickDemoInterval = setInterval(async () => {
+        if (document.hidden || estado.pantalla !== 'juego') return
+        try {
+            const res  = await fetch(`${API}/tick`, { method: 'POST' })
+            const data = await res.json()
+            if (data.exito) {
+                actualizarJuego(data.datos)
+                if (data.evento) setTimeout(() => mostrarEventoEspecial(data.evento), 500)
+            }
+        } catch(e) {}
+    }, 3000)
+
+    // Mostrar botón avanzar día
+    let btnAvanzar = document.getElementById('btn-avanzar-demo')
+    if (!btnAvanzar) {
+        btnAvanzar = document.createElement('button')
+        btnAvanzar.id        = 'btn-avanzar-demo'
+        btnAvanzar.className = 'btn-accion demo-avanzar'
+        btnAvanzar.innerHTML = '<span class="accion-icono">⏭️</span><span class="accion-label">+10 días</span>'
+        btnAvanzar.addEventListener('click', async () => {
+            mostrarNotificacion('⚡ Avanzando 10 días...')
+            for (let i = 0; i < 10; i++) {
+                try {
+                    const res  = await fetch(`${API}/tick`, { method: 'POST' })
+                    const data = await res.json()
+                    if (data.exito) actualizarJuego(data.datos)
+                    await new Promise(r => setTimeout(r, 200))
+                } catch(e) {}
+            }
+        })
+        dom.accionesPanel?.appendChild(btnAvanzar)
+    }
+    btnAvanzar.style.display = 'flex'
+}
+
+function desactivarModoDemo() {
+    modoActual = 'normal'
+    dom.btnModo.querySelector('.accion-label').textContent = 'Modo Demo'
+    dom.btnModo.classList.remove('demo-activo')
+    mostrarNotificacion('🌿 Modo Normal activado')
+    if (tickDemoInterval) { clearInterval(tickDemoInterval); tickDemoInterval = null }
+    iniciarTickAutomatico()
+    const btnAvanzar = document.getElementById('btn-avanzar-demo')
+    if (btnAvanzar) btnAvanzar.style.display = 'none'
+}
+
 dom.btnModo.addEventListener('click', () => {
-    modoActual = modoActual === 'normal' ? 'demo' : 'normal'
-    dom.btnModo.querySelector('.accion-label').textContent =
-        modoActual === 'demo' ? '⚡ Demo ON' : 'Modo Demo'
-    dom.btnModo.classList.toggle('demo-activo', modoActual === 'demo')
-    mostrarNotificacion(
-        modoActual === 'demo'
-            ? '⚡ Modo Demo activado — cooldowns reducidos'
-            : '🌿 Modo Normal activado'
-    )
+    modoActual === 'normal' ? activarModoDemo() : desactivarModoDemo()
 })
 
 // ════════════════════════════════════════════
@@ -745,18 +817,20 @@ function actualizarJuego(datos) {
     }
     estado.estadoAnterior = est?.nombre
 
-    if (est?.nombre === 'retorno' || est?.nombre === 'perdido') {
-        setTimeout(() => mostrarPantallaFin(datos), 2000)
+    if (est?.nombre === 'retorno_feliz' || est?.nombre === 'retorno_triste' || est?.nombre === 'perdido') {
+        setTimeout(() => mostrarPantallaFin(datos), 2500)
     }
 }
 
 function obtenerLabelFase(fase, tipo) {
     const labels = {
-        huevo: '🥚 Huevo Espiritual', base: '🐾 Sylvae',
-        evolucionada: { natura:'🌿 Sylvae Natura', umbra:'🌙 Sylvae Umbra', ignis:'🔥 Sylvae Ignis', aqua:'💧 Sylvae Aqua', aether:'✨ Sylvae Aether', umbris:'💔 Sylvae Umbris' },
-        retorno: '🌿 Retorno al Bosque', perdido: '💔 Perdido'
+        huevo          : '🥚 Huevo Espiritual',
+        base           : '🐾 Sylvae · Fase Joven',
+        adulta         : '🌿 Sylvae · Fase Adulta',
+        retorno_feliz  : '✨ Retorno al Bosque — Feliz',
+        retorno_triste : '💔 Retorno al Bosque — Triste',
+        perdido        : '💔 Perdido'
     }
-    if (fase === 'evolucionada' && tipo) return labels.evolucionada[tipo] || '✨ Sylvae'
     return labels[fase] || fase
 }
 
@@ -778,13 +852,35 @@ function actualizarFondoBosque(salud) {
     dom.bosqueFondo.style.backgroundPosition = 'center'
 }
 
+// ── Alternancia de idle adulta (base/base2) ──────────────────────────────────
+let _idleAdultaInterval = null
+let _idleAdultaToggle   = false
+
+function _iniciarIdleAdulta() {
+    if (_idleAdultaInterval) return
+    _idleAdultaInterval = setInterval(() => {
+        // Solo alternar si el estado actual es adulta_paz
+        if (estado.datosCriatura?.estado?.nombre !== 'adulta_paz') return
+        _idleAdultaToggle = !_idleAdultaToggle
+        const img = dom.criaturaSprite.querySelector('img')
+        if (img) {
+            img.src = _idleAdultaToggle
+                ? '/assets/images/criatura/sylvae_adulta_base2.gif'
+                : '/assets/images/criatura/sylvae_adulta_base.gif'
+        }
+    }, 5000)
+}
+
+function _detenerIdleAdulta() {
+    if (_idleAdultaInterval) { clearInterval(_idleAdultaInterval); _idleAdultaInterval = null }
+    _idleAdultaToggle = false
+}
+
 function actualizarImagenCriatura(imagenActual, fase, tipo) {
     dom.criaturaSprite.innerHTML = ''
     const img = document.createElement('img')
     img.src   = imagenActual || '/assets/images/criatura/huevo.png'
     img.alt   = 'Sylvae'
-
-    // si el GIF no existe, usar PNG
     img.onerror = () => {
         const rutaPng = imagenActual?.replace('.gif', '.png')
         if (rutaPng && !img.src.includes('.png')) {
@@ -795,19 +891,49 @@ function actualizarImagenCriatura(imagenActual, fase, tipo) {
         }
     }
     dom.criaturaSprite.appendChild(img)
+
+    // Gestionar alternancia idle adulta
+    const estadoNombre = estado.datosCriatura?.estado?.nombre || ''
+    if (fase === 'adulta' && estadoNombre === 'adulta_paz') {
+        _iniciarIdleAdulta()
+    } else {
+        _detenerIdleAdulta()
+    }
 }
 
-function obtenerColorTipo(tipo) {
-    const colores = { natura:'rgba(45,200,78,0.6)', umbra:'rgba(107,78,200,0.6)', ignis:'rgba(255,140,0,0.6)', aqua:'rgba(0,180,220,0.6)', aether:'rgba(255,215,100,0.6)', umbris:'rgba(80,0,0,0.6)', retorno:'rgba(255,215,100,0.8)' }
-    return colores[tipo] || 'rgba(127,255,127,0.4)'
+function obtenerColorTipo(fase) {
+    const colores = {
+        base           : 'rgba(100,200,120,0.5)',
+        adulta         : 'rgba(45,180,78,0.65)',
+        retorno_feliz  : 'rgba(255,215,100,0.8)',
+        retorno_triste : 'rgba(80,0,0,0.6)',
+        perdido        : 'rgba(30,0,0,0.7)'
+    }
+    return colores[fase] || 'rgba(127,255,127,0.4)'
 }
 
-function actualizarAura(estadoNombre, tipo) {
-    const color = obtenerColorTipo(tipo)
+function actualizarAura(estadoNombre, fase) {
+    const color = obtenerColorTipo(fase)
     dom.criaturaAura.style.background = `radial-gradient(circle, ${color} 0%, transparent 70%)`
-    const clases = ['sylvae-paz','sylvae-alegre','sylvae-somnoliento','sylvae-hambriento','sylvae-triste','sylvae-peligro','sylvae-retorno','sylvae-perdido']
-    clases.forEach(c => dom.criaturaSprite.classList.remove(c))
-    const mapaClases = { paz:'sylvae-paz', alegre:'sylvae-alegre', somnoliento:'sylvae-somnoliento', hambriento:'sylvae-hambriento', triste:'sylvae-triste', peligro:'sylvae-peligro', retorno:'sylvae-retorno', perdido:'sylvae-perdido' }
+    const todasClases = ['sylvae-paz','sylvae-alegre','sylvae-somnoliento','sylvae-hambriento',
+        'sylvae-triste','sylvae-peligro','sylvae-retorno','sylvae-perdido',
+        'sylvae-base-feliz','sylvae-base-triste','sylvae-base-peligro',
+        'sylvae-adulta-feliz','sylvae-adulta-triste','sylvae-adulta-peligro',
+        'sylvae-retorno-feliz','sylvae-retorno-triste']
+    todasClases.forEach(c => dom.criaturaSprite.classList.remove(c))
+    const mapaClases = {
+        base_feliz     : 'sylvae-base-feliz',
+        base_paz       : 'sylvae-paz',
+        base_triste    : 'sylvae-base-triste',
+        base_peligro   : 'sylvae-base-peligro',
+        adulta_feliz   : 'sylvae-adulta-feliz',
+        adulta_paz     : 'sylvae-paz',
+        adulta_triste  : 'sylvae-adulta-triste',
+        adulta_peligro : 'sylvae-adulta-peligro',
+        retorno_feliz  : 'sylvae-retorno-feliz',
+        retorno_triste : 'sylvae-retorno-triste',
+        perdido        : 'sylvae-perdido'
+    }
     dom.criaturaSprite.classList.add(mapaClases[estadoNombre] || 'sylvae-paz')
     const img = dom.criaturaSprite.querySelector('img')
     if (img) { img.style.width = '280px'; img.style.height = '280px' }
@@ -825,11 +951,8 @@ function actualizarBotonesAccion(accionesDisponibles) {
 function actualizarBadgeTendencia(tendencia, diasVividos, fase) {
     const badge = document.getElementById('badge-tendencia')
     if (!badge) return
-    if (diasVividos < 3 || fase === 'huevo') { badge.classList.add('oculto'); return }
-    if (!tendencia) return
-    badge.classList.remove('oculto')
-    badge.className   = `badge-tendencia ${tendencia.tipo}`
-    badge.textContent = `${tendencia.icono} Afinidad: ${tendencia.nombre}`
+    // Con el nuevo sistema no hay múltiples evoluciones — ocultamos el badge
+    badge.classList.add('oculto')
 }
 
 let urgenciaOverlay = null, urgenciaTimeout = null
@@ -1068,27 +1191,49 @@ function mostrarEventoEspecial(evento) {
 // ════════════════════════════════════════════
 
 function mostrarPantallaFin(datos) {
-    if (estado.tickInterval) clearInterval(estado.tickInterval)
+    if (estado.tickInterval)     clearInterval(estado.tickInterval)
+    if (tickDemoInterval)        clearInterval(tickDemoInterval)
     if (estado.particulasInterval) clearInterval(estado.particulasInterval)
+    _detenerIdleAdulta()
     CooldownManager.limpiarTodos()
     GestorAudio.detenerTodo()
-    const resumen = datos.resumen
-    const exitoso = datos.estado?.nombre === 'retorno'
-    setTimeout(() => GestorAudio.reproducirMusica(exitoso ? '/assets/sounds/eventos/retorno.mp3' : '/assets/sounds/ambiente/bosque_enfermo.mp3'), 500)
-    document.getElementById('fin-icono').textContent  = exitoso ? '✨' : '💔'
-    document.getElementById('fin-titulo').textContent = exitoso ? 'El ciclo se completa' : 'El bosque se ha oscurecido'
+
+    const resumen     = datos.resumen
+    const estadoNom   = datos.estado?.nombre
+    const esRetornoFeliz = estadoNom === 'retorno_feliz'
+    const esPerdido      = estadoNom === 'perdido'
+
+    // música de fin
+    setTimeout(() => {
+        if (esRetornoFeliz) {
+            GestorAudio.reproducirMusica('/assets/sounds/eventos/retorno.mp3')
+        } else {
+            GestorAudio.reproducirMusica('/assets/sounds/ambiente/bosque_enfermo.mp3')
+        }
+    }, 500)
+
+    document.getElementById('fin-icono').textContent  = esRetornoFeliz ? '✨' : '💔'
+    document.getElementById('fin-titulo').textContent = esRetornoFeliz
+        ? '¡El ciclo se completa con amor!'
+        : esPerdido ? 'El vínculo se ha roto...' : 'El ciclo termina en tristeza...'
+
     const imgFin = document.getElementById('fin-criatura-img')
     if (imgFin) imgFin.src = datos.imagenActual || '/assets/images/criatura/huevo.png'
+
     const auraFin = document.getElementById('fin-criatura-aura')
-    if (auraFin) auraFin.style.background = `radial-gradient(circle, ${obtenerColorTipo(datos.tipoEvolucion)} 0%, transparent 70%)`
-    document.getElementById('fin-dias').textContent    = `${resumen?.diasVividos ?? 0}/${resumen?.diasMaximos ?? 15}`
-    document.getElementById('fin-bosque').textContent  = `${datos.bosque?.salud ?? 0}%`
+    if (auraFin) auraFin.style.background = `radial-gradient(circle, ${obtenerColorTipo(datos.fase)} 0%, transparent 70%)`
+
+    document.getElementById('fin-dias').textContent   = `${resumen?.diasVividos ?? 0}/${resumen?.diasMaximos ?? 100}`
+    document.getElementById('fin-bosque').textContent = `${datos.bosque?.salud ?? 0}%`
+
     if (resumen?.logroMaximo) {
         document.getElementById('fin-logro-icono').textContent = resumen.logroMaximo.icono
         document.getElementById('fin-logro').textContent       = resumen.logroMaximo.nombre
     }
-    document.getElementById('fin-evolucion-valor').textContent = obtenerLabelFase(datos.fase, datos.tipoEvolucion)
-    document.getElementById('fin-mensaje').textContent = resumen?.mensaje || 'El bosque recuerda cada momento de cuidado.'
+
+    document.getElementById('fin-evolucion-valor').textContent = obtenerLabelFase(datos.fase, null)
+    document.getElementById('fin-mensaje').textContent         = resumen?.mensaje || 'El bosque recuerda.'
+
     mostrarPantalla('fin')
 }
 
@@ -1459,6 +1604,11 @@ function ocultarPantallaTitulo() {
         pantallaTitulo.classList.remove('activa')
     }, 1000)
 }
+
+// ── Botón silenciar — global ──────────────────────────────────────────────────
+document.getElementById('btn-silenciar')?.addEventListener('click', () => {
+    GestorAudio.toggleSilencio()
+})
 
 // ── Botón "Comenzar el Juego" (nueva partida) ─────────────────────────────────
 document.getElementById('btn-titulo-comenzar')?.addEventListener('click', () => {

@@ -37,24 +37,26 @@ export class Estadisticas {
     }
 
     // ── Degradación natural con el tiempo ────
+    // Ajustada para 100 días — degradación más suave
+    // para que el jugador tenga tiempo de reaccionar
 
     degradar() {
-        // hambre sube sola
-        this.modificar('hambre', +3)
+        // hambre sube sola (más lento que antes)
+        this.modificar('hambre', +2)
 
-        // espíritu baja solo
-        this.modificar('espiritu', -2)
+        // espíritu baja solo (más lento)
+        this.modificar('espiritu', -1)
 
-        // energía baja sola
+        // energía baja sola (más lento)
         this.modificar('energia', -1)
 
         // vitalidad baja más rápido si hay urgencias
         if (this.hambre > 70) {
-            this.modificar('vitalidad', -5)  // urgencia hambre
+            this.modificar('vitalidad', -3)  // urgencia hambre
         } else if (this.vinculo < 20) {
-            this.modificar('vitalidad', -3)  // urgencia vínculo
+            this.modificar('vitalidad', -2)  // urgencia vínculo
         } else {
-            this.modificar('vitalidad', -1)  // normal
+            this.modificar('vitalidad', -1)  // normal (muy lento)
         }
     }
 
@@ -164,8 +166,7 @@ export class Estadisticas {
             espiritu  : this.espiritu,
             energia   : this.energia,
             vinculo   : this.vinculo,
-            urgencias : this.getUrgencias(),
-            tendencia : this.getTendenciaEvolucion()
+            urgencias : this.getUrgencias()
         }
     }
 

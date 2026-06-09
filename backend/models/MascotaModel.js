@@ -1,7 +1,7 @@
 // ============================================
 // MODELO: MascotaModel
 // Define el esquema de MongoDB con Mongoose
-// Actualizado con sistema de evoluciones Sylvae
+// Sistema: base → adulta → retorno (100 días)
 // ============================================
 
 import mongoose from 'mongoose'
@@ -41,16 +41,17 @@ const MascotaSchema = new mongoose.Schema({
         maxlength : [20, 'El nombre no puede superar 20 caracteres']
     },
 
+    // ── Fases del ciclo de vida ───────────────
+    // huevo → base (día 1) → adulta (día 50) → retorno_feliz/triste (día 100)
     fase : {
         type    : String,
-        enum    : ['huevo', 'base', 'evolucionada', 'retorno', 'perdido'],
+        enum    : ['huevo', 'base', 'adulta', 'retorno_feliz', 'retorno_triste', 'perdido'],
         default : 'huevo'
     },
 
-    // ── NUEVO: tipo de evolución Sylvae ───────
+    // Ya no se usa para múltiples evoluciones, se mantiene por compatibilidad
     tipoEvolucion : {
         type    : String,
-        enum    : ['natura', 'umbra', 'ignis', 'aqua', 'aether', 'umbris', null],
         default : null
     },
 
@@ -60,9 +61,10 @@ const MascotaSchema = new mongoose.Schema({
         min     : 0
     },
 
+    // ── 100 días de ciclo ─────────────────────
     diasMaximos : {
         type    : Number,
-        default : 15
+        default : 100
     },
 
     estadisticas : {
@@ -82,10 +84,10 @@ const MascotaSchema = new mongoose.Schema({
 
     estado : {
         type    : String,
-        default : 'paz'
+        default : 'base_paz'
     },
 
-    // imagen actual calculada
+    // imagen actual calculada por Criatura.getImagenActual()
     imagenActual : {
         type    : String,
         default : '/assets/images/criatura/huevo.png'
@@ -107,7 +109,7 @@ const MascotaSchema = new mongoose.Schema({
         max     : 999
     },
 
-    // contador de acciones para consecuencias
+    // contador de acciones para consecuencias por exceso
     contadorAcciones : {
         alimentar : { type: Number, default: 0 },
         jugar     : { type: Number, default: 0 },
@@ -116,9 +118,9 @@ const MascotaSchema = new mongoose.Schema({
         hablar    : { type: Number, default: 0 }
     },
 
-    // estados especiales
+    // estados especiales (eventos temporales)
     estadoEspecial : {
-        tipo      : { type: String, default: null },
+        tipo          : { type: String, default: null },
         diasRestantes : { type: Number, default: 0 }
     },
 
@@ -152,7 +154,7 @@ MascotaSchema.methods.getDatosCompletos = function() {
 
 // ── Método para verificar cooldown ────────────
 MascotaSchema.methods.puedeEjecutar = function(accion, cooldownMinutos) {
-    const ultima = this.ultimasAcciones[accion]
+    const ultima     = this.ultimasAcciones[accion]
     if (!ultima) return true
     const ahora      = new Date()
     const diferencia = (ahora - ultima) / (1000 * 60)
