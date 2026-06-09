@@ -312,9 +312,11 @@ const dom = {
     finTitulo         : document.getElementById('fin-titulo'),
     finMensaje        : document.getElementById('fin-mensaje'),
     btnReiniciar      : document.getElementById('btn-reiniciar'),
-    btnTituloComenzar : document.getElementById('btn-titulo-comenzar'),
-    pantallaTitulo    : document.getElementById('pantalla-titulo'),
-    tituloParticulas  : document.getElementById('titulo-particulas')
+    btnTituloComenzar  : document.getElementById('btn-titulo-comenzar'),
+    btnTituloContinuar : document.getElementById('btn-titulo-continuar'),
+    continuarInfo      : document.getElementById('continuar-info'),
+    pantallaTitulo     : document.getElementById('pantalla-titulo'),
+    tituloParticulas   : document.getElementById('titulo-particulas')
 }
 
 // ════════════════════════════════════════════
@@ -906,12 +908,14 @@ async function ejecutarAccion(nombreAccion, btn) {
 }
 
 // ════════════════════════════════════════════
-// TICK AUTOMÁTICO
+// TICK AUTOMÁTICO — con pausa al salir de pestaña
 // ════════════════════════════════════════════
 
 function iniciarTickAutomatico() {
     if (estado.tickInterval) clearInterval(estado.tickInterval)
     estado.tickInterval = setInterval(async () => {
+        // no hacer tick si la pestaña está oculta
+        if (document.hidden) return
         try {
             const res  = await fetch(`${API}/tick`, { method: 'POST' })
             const data = await res.json()
@@ -922,6 +926,22 @@ function iniciarTickAutomatico() {
         } catch (error) { console.error('Error en tick:', error) }
     }, 30000)
 }
+
+// ── Pausa visual cuando el usuario cambia de pestaña ─────────────────────────
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Pausar música al salir
+        if (estado.pantalla === 'juego') {
+            GestorAudio.pausarMusica()
+        }
+    } else {
+        // Reanudar música al volver
+        if (estado.pantalla === 'juego' && estado.datosCriatura) {
+            const salud = estado.datosCriatura.bosque?.salud ?? 100
+            GestorAudio.reproducirMusica(GestorAudio.getMusicaBosque(salud))
+        }
+    }
+})
 
 // ════════════════════════════════════════════
 // PARTÍCULAS
@@ -1430,16 +1450,37 @@ function iniciarParticulasTitulo() {
     }, 600)
 }
 
-document.getElementById('btn-titulo-comenzar')?.addEventListener('click', () => {
-    GestorAudio.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
+function ocultarPantallaTitulo() {
     const pantallaTitulo = document.getElementById('pantalla-titulo')
     pantallaTitulo.style.transition = 'opacity 1s ease'
     pantallaTitulo.style.opacity    = '0'
     setTimeout(() => {
         pantallaTitulo.style.display = 'none'
         pantallaTitulo.classList.remove('activa')
+    }, 1000)
+}
+
+// ── Botón "Comenzar el Juego" (nueva partida) ─────────────────────────────────
+document.getElementById('btn-titulo-comenzar')?.addEventListener('click', () => {
+    GestorAudio.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
+    ocultarPantallaTitulo()
+    setTimeout(() => {
         iniciarIntro()
         mostrarPantalla('intro')
+    }, 1000)
+})
+
+// ── Botón "Continuar Partida" (retomar partida activa) ────────────────────────
+document.getElementById('btn-titulo-continuar')?.addEventListener('click', () => {
+    if (!estado.datosCriatura) return
+    ocultarPantallaTitulo()
+    setTimeout(() => {
+        GestorAudio.detenerTodo()
+        mostrarPantalla('juego')
+        actualizarJuego(estado.datosCriatura)
+        iniciarTickAutomatico()
+        iniciarParticulas(estado.datosCriatura)
+        GestorAudio.reproducirMusica(GestorAudio.getMusicaBosque(estado.datosCriatura.bosque?.salud ?? 100))
     }, 1000)
 })
 
@@ -1452,20 +1493,28 @@ async function inicializar() {
     try {
         const res  = await fetch(`${API}/estado`)
         const data = await res.json()
-        if (data.exito) {
-            const pantallaTitulo = document.getElementById('pantalla-titulo')
-            pantallaTitulo.style.display = 'none'
-            pantallaTitulo.classList.remove('activa')
+        if (data.exito && data.datos) {
+            // Hay partida activa → guardar datos y mostrar botón Continuar
             estado.datosCriatura = data.datos
-            GestorAudio.detenerTodo()
-            mostrarPantalla('juego')
-            actualizarJuego(data.datos)
-            iniciarTickAutomatico()
-            iniciarParticulas(data.datos)
-            GestorAudio.reproducirMusica(GestorAudio.getMusicaBosque(data.datos.bosque?.salud ?? 100))
+
+            const btnContinuar = document.getElementById('btn-titulo-continuar')
+            const infoEl       = document.getElementById('continuar-info')
+
+            if (btnContinuar) {
+                btnContinuar.classList.remove('oculto')
+
+                // Info de la criatura en el botón (nombre + días)
+                if (infoEl && data.datos.nombre) {
+                    const dias = data.datos.diasVividos ?? 0
+                    const tipo = data.datos.tipoEvolucion
+                        ? ` · ${data.datos.tipoEvolucion}`
+                        : ''
+                    infoEl.textContent = `${data.datos.nombre} · Día ${dias}${tipo}`
+                }
+            }
         }
     } catch (error) {
-        console.log('Mostrando pantalla título')
+        console.log('Mostrando pantalla título — sin partida activa')
     }
 }
 

@@ -49,12 +49,25 @@
                 no desaparezca… que tome forma."
             </p>
 
-            <!-- botón comenzar -->
-            <button class="btn-comenzar-juego" id="btn-titulo-comenzar">
-                <span class="btn-comenzar-icono">🌿</span>
-                <span class="btn-comenzar-texto">Comenzar el Juego</span>
-                <span class="btn-comenzar-brillo"></span>
-            </button>
+            <!-- botones de la pantalla título -->
+            <div class="titulo-botones">
+
+                <!-- botón comenzar (nueva partida) -->
+                <button class="btn-comenzar-juego" id="btn-titulo-comenzar">
+                    <span class="btn-comenzar-icono">🌿</span>
+                    <span class="btn-comenzar-texto">Comenzar el Juego</span>
+                    <span class="btn-comenzar-brillo"></span>
+                </button>
+
+                <!-- botón continuar (solo visible si hay partida guardada) -->
+                <button class="btn-comenzar-juego btn-continuar oculto" id="btn-titulo-continuar">
+                    <span class="btn-comenzar-icono">🌀</span>
+                    <span class="btn-comenzar-texto">Continuar Partida</span>
+                    <span class="btn-continuar-info" id="continuar-info"></span>
+                    <span class="btn-comenzar-brillo"></span>
+                </button>
+
+            </div>
 
             <!-- créditos pequeños -->
             <p class="titulo-creditos">
