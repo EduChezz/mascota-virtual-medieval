@@ -781,7 +781,17 @@ function actualizarImagenCriatura(imagenActual, fase, tipo) {
     const img = document.createElement('img')
     img.src   = imagenActual || '/assets/images/criatura/huevo.png'
     img.alt   = 'Sylvae'
-    img.onerror = () => { dom.criaturaSprite.innerHTML = fase === 'huevo' ? '🥚' : '🐾'; dom.criaturaSprite.style.fontSize = '7rem' }
+
+    // si el GIF no existe, usar PNG
+    img.onerror = () => {
+        const rutaPng = imagenActual?.replace('.gif', '.png')
+        if (rutaPng && !img.src.includes('.png')) {
+            img.src = rutaPng
+        } else {
+            dom.criaturaSprite.innerHTML      = fase === 'huevo' ? '🥚' : '🐾'
+            dom.criaturaSprite.style.fontSize = '7rem'
+        }
+    }
     dom.criaturaSprite.appendChild(img)
 }
 
