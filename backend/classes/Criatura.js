@@ -81,8 +81,9 @@ export class Criatura {
             resultado
         })
 
-        const logros = this._verificarLogros(accion.getNombre())
-        return { exito: true, resultado, logros }
+        const logros      = this._verificarLogros(accion.getNombre())
+        const advertencias = this._verificarExcesos(accion.getNombre())
+        return { exito: true, resultado, logros, advertencias }
     }
 
     // ════════════════════════════════════════
@@ -293,6 +294,89 @@ export class Criatura {
         }
 
         return '/assets/images/criatura/huevo.png'
+    }
+
+    // ════════════════════════════════════════════
+    // CONSECUENCIAS POR EXCESO
+    // ════════════════════════════════════════════
+
+    _verificarExcesos(accionEjecutada) {
+        const h = this._contadorAcciones
+        const s = this.estadisticas
+        const advertencias = []
+
+        // comer demasiado → hambre baja de más → se enferma
+        if (accionEjecutada === 'alimentar') {
+            const veces = (h['alimentar'] || 0)
+            if (s.getHambre() <= 10 && veces > 0) {
+                s.modificar('vitalidad', -15)
+                s.modificar('espiritu',  -10)
+                advertencias.push({
+                    tipo    : 'sobrealimento',
+                    mensaje : '🤢 ¡Sylvae comió demasiado! Su vitalidad baja.',
+                    icono   : '🤢'
+                })
+            }
+        }
+
+        // dormir demasiado → perezoso → espíritu baja
+        if (accionEjecutada === 'dormir') {
+            const consecutivos = h['_dormir_consecutivo'] || 0
+            h['_dormir_consecutivo'] = consecutivos + 1
+            if (consecutivos >= 2) {
+                s.modificar('espiritu', -10)
+                s.modificar('vinculo',  -5)
+                advertencias.push({
+                    tipo    : 'perezoso',
+                    mensaje : '😪 Sylvae se está volviendo perezosa... ¡sácala a jugar!',
+                    icono   : '😪'
+                })
+            }
+        } else {
+            // resetear contador si hace otra acción
+            if (accionEjecutada !== 'dormir') {
+                h['_dormir_consecutivo'] = 0
+            }
+        }
+
+        // jugar con poca energía → agotado
+        if (accionEjecutada === 'jugar' && s.getEnergia() < 20) {
+            s.modificar('vitalidad', -10)
+            s.modificar('energia',   -10)
+            advertencias.push({
+                tipo    : 'agotado',
+                mensaje : '😵 ¡Sylvae está agotada de jugar! Necesita dormir.',
+                icono   : '😵'
+            })
+        }
+
+        // meditar demasiado → distante
+        if (accionEjecutada === 'meditar') {
+            const veces = (h['meditar'] || 0)
+            if (veces >= 4 && (h['jugar'] || 0) === 0) {
+                s.modificar('vinculo', -15)
+                advertencias.push({
+                    tipo    : 'distante',
+                    mensaje : '🌀 Sylvae está demasiado en el plano espiritual... háblale.',
+                    icono   : '🌀'
+                })
+            }
+        }
+
+        // hablar demasiado → abrumado
+        if (accionEjecutada === 'hablar') {
+            const veces = (h['hablar'] || 0)
+            if (veces >= 8) {
+                s.modificar('espiritu', -8)
+                advertencias.push({
+                    tipo    : 'abrumado',
+                    mensaje : '😤 Sylvae se siente abrumada... dale un momento de silencio.',
+                    icono   : '😤'
+                })
+            }
+        }
+
+        return advertencias
     }
 
     // ════════════════════════════════════════

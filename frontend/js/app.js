@@ -875,8 +875,13 @@ async function ejecutarAccion(nombreAccion, btn) {
             estado.datosCriatura = data.datos
             actualizarJuego(data.datos)
             mostrarNotificacion(data.mensaje)
-            if (data.logros && data.logros.length > 0) {
-                data.logros.forEach((logro, i) => setTimeout(() => mostrarLogro(logro), i * 2500))
+            // mostrar advertencias por exceso
+            if (data.advertencias && data.advertencias.length > 0) {
+                data.advertencias.forEach((adv, i) => {
+                    setTimeout(() => {
+                        mostrarNotificacion(`${adv.icono} ${adv.mensaje}`, true)
+                    }, i * 1500)
+                })
             }
             CooldownManager.iniciar(nombreAccion, cooldownSegundos)
         } else {
@@ -1345,15 +1350,57 @@ const Minijuego = {
     }
 }
 
-document.getElementById('btn-minijuegos')?.addEventListener('click', () => Minijuego.abrir())
-document.getElementById('btn-cerrar-minijuegos')?.addEventListener('click', () => Minijuego.cerrar())
-document.querySelectorAll('.btn-jugar-mini').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const juego = btn.dataset.juego
+// ── Event delegation para minijuegos y tienda ──
+document.addEventListener('click', (e) => {
+
+    // abrir minijuegos
+    if (e.target.closest('#btn-minijuegos')) {
+        Minijuego.abrir()
+        return
+    }
+
+    // cerrar minijuegos
+    if (e.target.closest('#btn-cerrar-minijuegos')) {
+        Minijuego.cerrar()
+        return
+    }
+
+    // cerrar tienda
+    if (e.target.closest('#btn-cerrar-tienda')) {
+        document.getElementById('panel-tienda').classList.add('oculto')
+        return
+    }
+
+    // cerrar historial
+    if (e.target.closest('#btn-cerrar-historial')) {
+        document.getElementById('panel-historial').classList.add('oculto')
+        return
+    }
+
+    // botones jugar minijuego
+    const btnJugar = e.target.closest('.btn-jugar-mini')
+    if (btnJugar) {
+        const juego = btnJugar.dataset.juego
         if (juego === 'hierbas')     Minijuego.iniciarHierbas()
         if (juego === 'runas')       Minijuego.iniciarRunas()
         if (juego === 'luciernagas') Minijuego.iniciarLuciernagas()
-    })
+        return
+    }
+
+    // botones comprar tienda
+    const btnComprar = e.target.closest('.tienda-item .btn-comprar')
+    if (btnComprar) {
+        const item = btnComprar.closest('.tienda-item').dataset.item
+        comprarItemTienda(item, btnComprar)
+        return
+    }
+
+    // cerrar modal al hacer click fuera
+    if (e.target.classList.contains('panel-modal')) {
+        e.target.classList.add('oculto')
+        Minijuego.limpiar()
+        return
+    }
 })
 
 // ════════════════════════════════════════════
