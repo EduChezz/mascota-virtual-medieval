@@ -316,6 +316,7 @@ const dom = {
     nombreCriatura    : document.getElementById('nombre-criatura'),
     faseCriatura      : document.getElementById('fase-criatura'),
     diasVividos       : document.getElementById('dias-vividos'),
+    diasMaximos       : document.getElementById('dias-maximos'),
     criaturaSprite    : document.getElementById('criatura-sprite'),
     criaturaAura      : document.getElementById('criatura-aura'),
     estadoMensaje     : document.getElementById('estado-mensaje'),
@@ -772,11 +773,12 @@ async function cargarEstado() {
 
 function actualizarJuego(datos) {
     if (!datos) return
-    const { nombre, fase, tipoEvolucion, estado: est, estadisticas, bosque, diasVividos, imagenActual, tendencia, urgencias } = datos
+    const { nombre, fase, tipoEvolucion, estado: est, estadisticas, bosque, diasVividos, diasMaximos, imagenActual, tendencia, urgencias } = datos
 
     dom.nombreCriatura.textContent = nombre
     dom.faseCriatura.textContent   = obtenerLabelFase(fase, tipoEvolucion)
-    dom.diasVividos.textContent    = diasVividos
+    dom.diasVividos.textContent    = diasVividos + 1
+    if (dom.diasMaximos) dom.diasMaximos.textContent = `/ ${diasMaximos ?? 100}`
 
     const saludBosque = bosque?.salud ?? 100
     dom.barraBosque.style.width = `${saludBosque}%`
