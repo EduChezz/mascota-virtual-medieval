@@ -836,7 +836,10 @@ function actualizarJuego(datos) {
     // semillas
     if (datos.semillas !== undefined) actualizarSemillas(datos.semillas)
     // inventario / mochila
-    if (datos.inventario !== undefined) actualizarMochila(datos.inventario)
+    if (datos.inventario !== undefined) {
+        actualizarMochila(datos.inventario)
+        actualizarBotonAlimentar(datos.inventario)
+    }
 
     actualizarImagenCriatura(imagenActual, fase, tipoEvolucion)
     if (est?.mensaje) dom.estadoMensaje.textContent = est.mensaje
@@ -1013,11 +1016,30 @@ function actualizarAura(estadoNombre, fase) {
 function actualizarBotonesAccion(accionesDisponibles) {
     dom.botonesAccion.forEach(btn => {
         const accion = btn.dataset.accion
-        if (!accion) return  // botones sin acción de juego (mochila, etc.) nunca se deshabilitan aquí
+        if (!accion) return
         if (!accionesDisponibles.includes(accion) && !btn.classList.contains('en-cooldown')) {
             btn.disabled = true
         }
     })
+}
+
+function actualizarBotonAlimentar(inventario) {
+    const btn   = document.querySelector('.btn-accion[data-accion="alimentar"]')
+    const label = btn?.querySelector('.accion-label')
+    if (!btn || !label) return
+
+    const comida = contarComida(inventario)
+    if (comida === 0) {
+        btn.disabled         = true
+        btn.title            = 'Sin alimento — compra en la tienda'
+        label.innerHTML      = 'Sin alimento'
+        btn.classList.add('btn-sin-comida')
+    } else {
+        btn.disabled         = false
+        btn.title            = 'Dar alimento a Sylvae'
+        label.innerHTML      = `Alimentar <span class="alimentar-badge-count">${comida}</span>`
+        btn.classList.remove('btn-sin-comida')
+    }
 }
 
 function actualizarBadgeTendencia(tendencia, diasVividos, fase) {
@@ -1084,10 +1106,18 @@ function actualizarGuia(datos) {
     } else if (hambre > 80) {
         prioridad   = 'urgente'
         icono       = '🍃'
-        titulo      = 'Sylvae tiene mucha hambre'
-        consejo     = 'El hambre alta daña la vitalidad con cada minuto. ¡Aliméntala pronto!'
-        accionBtn   = 'alimentar'
-        accionLabel = '🍃 Alimentar'
+        const tieneComida80 = contarComida(inventario) > 0
+        if (tieneComida80) {
+            titulo      = 'Sylvae tiene mucha hambre'
+            consejo     = 'El hambre alta daña la vitalidad. ¡Dale alimento de tu mochila!'
+            accionBtn   = 'alimentar'
+            accionLabel = '🍃 Dar alimento'
+        } else {
+            titulo      = '¡Sylvae tiene hambre y no hay alimento!'
+            consejo     = 'Compra hierba en la tienda (🌱3) o juega un minijuego para ganar semillas.'
+            accionBtn   = 'tienda'
+            accionLabel = '🛒 Ir a la tienda'
+        }
     } else if (energia < 20) {
         prioridad   = 'urgente'
         icono       = '💤'
@@ -1105,10 +1135,18 @@ function actualizarGuia(datos) {
     } else if (hambre > 60) {
         prioridad   = 'aviso'
         icono       = '🍃'
-        titulo      = 'Sylvae empieza a tener hambre'
-        consejo     = 'Si el hambre pasa de 70, la vitalidad empieza a bajar. ¡Aliméntala!'
-        accionBtn   = 'alimentar'
-        accionLabel = '🍃 Alimentar'
+        const tieneComida60 = contarComida(inventario) > 0
+        if (tieneComida60) {
+            titulo      = 'Sylvae empieza a tener hambre'
+            consejo     = 'Si el hambre pasa de 70, la vitalidad empieza a bajar. Dale alimento.'
+            accionBtn   = 'alimentar'
+            accionLabel = '🍃 Dar alimento'
+        } else {
+            titulo      = 'Sylvae tendrá hambre pronto — sin alimento'
+            consejo     = 'Tienes tiempo: compra comida en la tienda o juega un minijuego.'
+            accionBtn   = 'tienda'
+            accionLabel = '🛒 Ir a la tienda'
+        }
     } else if (espiritu < 35) {
         prioridad   = 'aviso'
         icono       = '✨'
@@ -1199,6 +1237,10 @@ function actualizarGuia(datos) {
             const accion = btn.dataset.guiaAccion
             if (accion === 'mochila') {
                 document.getElementById('btn-mochila')?.click()
+            } else if (accion === 'tienda') {
+                document.getElementById('btn-tienda')?.click()
+            } else if (accion === 'alimentar') {
+                document.querySelector('.btn-accion[data-accion="alimentar"]')?.click()
             } else {
                 document.querySelector(`.btn-accion[data-accion="${accion}"]`)?.click()
             }
@@ -1213,7 +1255,20 @@ function actualizarGuia(datos) {
 dom.botonesAccion.forEach(btn => {
     btn.addEventListener('click', async () => {
         if (btn.disabled) return
-        await ejecutarAccion(btn.dataset.accion, btn)
+        const accion = btn.dataset.accion
+
+        // Alimentar ahora requiere ítems de comida en la mochila
+        if (accion === 'alimentar') {
+            const comida = contarComida(estado.datosCriatura?.inventario)
+            if (comida === 0) {
+                mostrarNotificacion('🍃 Sin alimento — compra en la tienda o juega un minijuego para ganar semillas', true)
+                return
+            }
+            abrirMochilaParaAlimentar()
+            return
+        }
+
+        await ejecutarAccion(accion, btn)
     })
 })
 
@@ -1616,6 +1671,14 @@ const ITEMS_INFO = {
     semilla_sagrada : { nombre: 'Semilla Sagrada',    icono: '🌱', efecto: 'Bosque +25 salud' }
 }
 
+// Ítems que cuentan como alimento para Sylvae
+const ITEMS_COMIDA = ['hierba_fresca', 'fruta_encantada', 'miel_bosque', 'nectar_sagrado']
+
+function contarComida(inventario) {
+    if (!inventario) return 0
+    return ITEMS_COMIDA.reduce((sum, k) => sum + (inventario[k] || 0), 0)
+}
+
 function actualizarMochila(inventario) {
     if (!inventario) return
     const btn   = document.getElementById('btn-mochila')
@@ -1629,17 +1692,31 @@ function actualizarMochila(inventario) {
 
 function renderMochila(inventario) {
     const contenido = document.getElementById('mochila-contenido')
+    const panel     = document.getElementById('panel-mochila')
     if (!contenido) return
-    const items = Object.entries(inventario || {}).filter(([, qty]) => qty > 0)
+
+    const esAlimentar = panel?.classList.contains('contexto-alimentar')
+
+    // En contexto alimentar mostrar solo ítems de comida
+    let items = Object.entries(inventario || {}).filter(([, qty]) => qty > 0)
+    if (esAlimentar) items = items.filter(([id]) => ITEMS_COMIDA.includes(id))
+
     if (items.length === 0) {
-        contenido.innerHTML = '<p style="color:var(--color-texto-suave);text-align:center;padding:2rem;font-size:0.85rem">Tu mochila está vacía.<br>Visita la tienda para comprar ítems.</p>'
+        const msgVacio = esAlimentar
+            ? `<p class="mochila-vacio">No tienes alimento.<br>
+               🛒 <strong>Compra en la tienda</strong> (hierba, fruta, miel…)<br>
+               o 🏘️ <strong>juega un minijuego</strong> para ganar semillas.</p>`
+            : '<p class="mochila-vacio">Tu mochila está vacía.<br>Visita la tienda para comprar ítems.</p>'
+        contenido.innerHTML = msgVacio
         return
     }
+
     contenido.innerHTML = ''
     items.forEach(([id, qty]) => {
-        const info = ITEMS_INFO[id] || { nombre: id, icono: '📦', efecto: '' }
-        const el   = document.createElement('div')
-        el.className = 'mochila-item'
+        const info    = ITEMS_INFO[id] || { nombre: id, icono: '📦', efecto: '' }
+        const esComida = ITEMS_COMIDA.includes(id)
+        const el      = document.createElement('div')
+        el.className  = 'mochila-item' + (esAlimentar && esComida ? ' item-comida-destacado' : '')
         el.dataset.item = id
         el.innerHTML = `
             <div class="item-icono">${info.icono}</div>
@@ -1648,21 +1725,49 @@ function renderMochila(inventario) {
                 <div class="item-efecto">${info.efecto}</div>
             </div>
             <div class="item-cantidad">x${qty}</div>
-            <button class="btn-usar-item" data-item="${id}">Usar</button>`
+            <button class="btn-usar-item" data-item="${id}">${esAlimentar && esComida ? 'Dar 🍃' : 'Usar'}</button>`
         contenido.appendChild(el)
     })
+}
+
+function abrirMochilaParaAlimentar() {
+    GestorAudio.reproducirEfecto('/assets/sounds/acciones/alimentar.mp3', 2000)
+    const panel = document.getElementById('panel-mochila')
+    if (!panel) return
+    panel.classList.remove('oculto')
+    panel.classList.add('contexto-alimentar')
+    // Cambiar título y subtítulo del panel
+    const h3 = panel.querySelector('.modal-header h3')
+    const sub = panel.querySelector('.modal-header + p')
+    if (h3)  h3.textContent = '🍃 Dar alimento a Sylvae'
+    if (sub) sub.textContent = 'Elige qué darle de comer — los efectos se aplican al instante'
+    renderMochila(estado.datosCriatura?.inventario || {})
 }
 
 document.getElementById('btn-mochila')?.addEventListener('click', () => {
     const panel = document.getElementById('panel-mochila')
     if (!panel) return
     panel.classList.remove('oculto')
+    panel.classList.remove('contexto-alimentar')
+    const h3 = panel.querySelector('.modal-header h3')
+    const sub = panel.querySelector('.modal-header + p')
+    if (h3)  h3.textContent = '🎒 Mochila de Sylvae'
+    if (sub) sub.textContent = 'Usa los ítems para cuidar a tu criatura'
     renderMochila(estado.datosCriatura?.inventario || {})
 })
 
-document.getElementById('btn-cerrar-mochila')?.addEventListener('click', () => {
-    document.getElementById('panel-mochila')?.classList.add('oculto')
-})
+function cerrarMochila() {
+    const panel = document.getElementById('panel-mochila')
+    if (!panel) return
+    panel.classList.add('oculto')
+    panel.classList.remove('contexto-alimentar')
+    const h3 = panel.querySelector('.modal-header h3')
+    const sub = panel.querySelector('.modal-header + p')
+    if (h3)  h3.textContent = '🎒 Mochila de Sylvae'
+    if (sub) sub.textContent = 'Usa los ítems para cuidar a tu criatura'
+}
+
+document.getElementById('btn-cerrar-mochila')?.addEventListener('click', cerrarMochila)
 
 document.addEventListener('click', async (e) => {
     const btnUsar = e.target.closest('.btn-usar-item')
@@ -1919,7 +2024,7 @@ document.addEventListener('click', (e) => {
         return
     }
     if (e.target.matches('#panel-mochila')) {
-        e.target.classList.add('oculto')
+        cerrarMochila()
         return
     }
 })

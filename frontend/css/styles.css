@@ -1379,6 +1379,65 @@ body {
 .btn-usar-item:hover { transform: scale(1.05); box-shadow: 0 0 10px rgba(147,112,219,0.5); }
 .btn-usar-item:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ── Feeding system ───────────────────────── */
+.item-comida-destacado {
+    border-color    : rgba(100, 220, 100, 0.7) !important;
+    background      : rgba(50, 180, 80, 0.12) !important;
+    box-shadow      : 0 0 8px rgba(80, 200, 80, 0.25);
+}
+.item-comida-destacado:hover {
+    border-color    : rgba(100, 255, 100, 0.9) !important;
+    box-shadow      : 0 0 14px rgba(80, 220, 80, 0.4);
+}
+.btn-dar-comida {
+    padding         : 0.3rem 0.75rem;
+    background      : linear-gradient(135deg, #1a4a1e, #2a8e3a);
+    border          : 1px solid rgba(80, 200, 80, 0.6);
+    border-radius   : 10px;
+    color           : rgba(160, 255, 160, 1);
+    font-size       : 0.7rem;
+    cursor          : pointer;
+    flex-shrink     : 0;
+    transition      : var(--transicion);
+}
+.btn-dar-comida:hover { transform: scale(1.05); box-shadow: 0 0 10px rgba(80, 200, 80, 0.5); }
+.alimentar-badge-count {
+    display         : inline-block;
+    background      : rgba(80, 200, 80, 0.8);
+    color           : #001a00;
+    font-size       : 0.6rem;
+    font-weight     : bold;
+    padding         : 0.05rem 0.35rem;
+    border-radius   : 8px;
+    margin-left     : 0.3rem;
+    vertical-align  : middle;
+}
+.btn-sin-comida {
+    opacity         : 0.55;
+    cursor          : not-allowed !important;
+    border-color    : rgba(150, 100, 100, 0.5) !important;
+    color           : rgba(180, 140, 140, 0.8) !important;
+}
+.btn-sin-comida:hover { transform: none !important; box-shadow: none !important; }
+.mochila-vacio {
+    text-align      : center;
+    padding         : 1.5rem 1rem;
+    color           : var(--color-texto-suave);
+    font-size       : 0.8rem;
+    font-style      : italic;
+    line-height     : 1.6;
+    border          : 1px dashed rgba(255,255,255,0.1);
+    border-radius   : 10px;
+    background      : rgba(255,255,255,0.02);
+}
+.mochila-vacio strong {
+    display         : block;
+    font-size       : 0.9rem;
+    color           : rgba(200, 160, 100, 0.9);
+    font-style      : normal;
+    margin-bottom   : 0.4rem;
+}
+
 .minijuego-subtitulo { color: var(--color-texto-suave); font-size: 0.85rem; text-align: center; margin-bottom: 1rem; font-style: italic; }
 .minijuegos-grid {
     display               : grid;
