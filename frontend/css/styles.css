@@ -410,6 +410,7 @@ body {
 .header-info     { display: flex; flex-direction: column; align-items: center; flex: 1; }
 .criatura-nombre { font-family: var(--font-principal); font-size: 1.1rem; color: var(--color-acento2); text-shadow: var(--glow-dorado); }
 .criatura-fase   { font-size: 0.8rem; color: var(--color-acento2); font-family: var(--font-principal); font-style: italic; }
+.header-utilidad { display: flex; align-items: center; gap: 0.35rem; }
 .header-dias     { display: flex; align-items: center; gap: 0.3rem; flex: 1; justify-content: flex-end; }
 .dias-numero     { font-size: 1.3rem; color: var(--color-acento); font-weight: bold; }
 
@@ -816,7 +817,6 @@ body {
     justify-content: center;
     transition : background 0.2s, transform 0.15s;
     flex-shrink: 0;
-    margin-right: 0.4rem;
 }
 .btn-silenciar:hover {
     background : rgba(0,0,0,0.8);
@@ -837,7 +837,6 @@ body {
     justify-content: center;
     transition    : background 0.2s, transform 0.15s;
     flex-shrink   : 0;
-    margin-right  : 0.25rem;
 }
 .btn-menu:hover {
     background : rgba(45,110,78,0.5);
@@ -1678,54 +1677,82 @@ button, [role="button"] { touch-action: manipulation; }
 /* ── Teléfonos (≤600px) ───────────────────── */
 @media (max-width: 600px) {
 
-    /* ─ Header: 2 filas ─ */
+    /* ─ Header: 2 filas limpias ─────────────────
+       Fila 1: [🌳 Bosque ══bar══ valor]  [Día X/100]
+       Fila 2: [🏠 🔊]  [nombre · fase]  [🌱 N 🛒🏘️]
+    ─────────────────────────────────────────── */
     .juego-header {
         flex-wrap   : wrap;
-        padding     : 0.45rem 0.75rem;
-        gap         : 0.25rem 0;
+        padding     : 0.45rem 0.8rem 0.35rem;
+        gap         : 0.3rem 0;
         align-items : center;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
     }
-    /* Fila 1: barra del bosque | días */
+
+    /* ── Fila 1 ── */
     .header-bosque {
-        flex         : 1 1 0;
-        order        : 1;
-        min-width    : 0;
-        gap          : 0.35rem;
-        padding-right: 0.5rem;
+        flex      : 1 1 auto;
+        order     : 1;
+        min-width : 0;
+        gap       : 0.4rem;
     }
     .header-dias {
         flex            : 0 0 auto;
         order           : 2;
-        gap             : 0.3rem;
+        gap             : 0.25rem;
         justify-content : flex-end;
-        border-left     : 1px solid rgba(255,255,255,0.12);
-        padding-left    : 0.55rem;
-    }
-    /* Fila 2: info criatura | semillas+botones */
-    .header-info {
-        flex        : 1 1 0;
-        order       : 3;
-        min-width   : 0;
-        align-items : flex-start;
-        padding-left: 0.1rem;
-    }
-    .header-semillas {
-        flex  : 0 0 auto;
-        order : 4;
-        gap   : 0.35rem;
+        padding-left    : 0.7rem;
+        border-left     : 1px solid rgba(255,255,255,0.15);
     }
 
+    /* ── Fila 2 ── */
+    .header-utilidad {
+        flex       : 0 0 auto;
+        order      : 3;
+        gap        : 0.4rem;
+        padding-top: 0.05rem;
+    }
+    .header-info {
+        flex            : 1 1 0;
+        order           : 4;
+        min-width       : 0;
+        flex-direction  : row;
+        flex-wrap       : wrap;
+        align-items     : center;
+        justify-content : center;
+        gap             : 0.1rem 0.45rem;
+        padding         : 0 0.4rem;
+    }
+    .header-semillas {
+        flex       : 0 0 auto;
+        order      : 5;
+        gap        : 0.35rem;
+        padding-top: 0.05rem;
+    }
+
+    /* ── Separador visual fila 1 → fila 2 ── */
+    .header-dias::after {
+        content     : '';
+        display     : block;
+        position    : absolute;
+        left        : 0;
+        bottom      : 0;
+        width       : 100%;
+        height      : 1px;
+        background  : rgba(255,255,255,0.06);
+    }
+
+    /* ── Tipografías header ── */
     .header-label    { font-size: 0.7rem; }
-    .header-valor    { font-size: 0.82rem; font-weight: bold; }
-    .criatura-nombre { font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 155px; }
-    .criatura-fase   { font-size: 0.65rem; }
-    .badge-tendencia { font-size: 0.62rem; padding: 0.12rem 0.45rem; }
-    .dias-numero     { font-size: 1rem; }
+    .criatura-nombre { font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+    .criatura-fase   { font-size: 0.7rem; white-space: nowrap; }
+    .badge-tendencia { font-size: 0.6rem; padding: 0.1rem 0.4rem; margin-top: 0; }
+    .dias-numero     { font-size: 1.05rem; }
     .semillas-icono  { font-size: 0.9rem; }
     .semillas-valor  { font-size: 0.9rem; min-width: 22px; }
     .btn-tienda,
     .btn-minijuegos  { font-size: 1rem; padding: 0.2rem 0.4rem; }
-    .btn-silenciar   { width: 1.8rem; height: 1.8rem; font-size: 0.82rem; margin-right: 0.15rem; }
+    .btn-silenciar   { width: 1.8rem; height: 1.8rem; font-size: 0.82rem; }
     .btn-menu        { width: 1.8rem; height: 1.8rem; font-size: 0.82rem; }
 
     /* ─ Criatura — reducida para dar más espacio a controles ─ */
@@ -1848,7 +1875,11 @@ button, [role="button"] { touch-action: manipulation; }
     .header-bosque,
     .header-info,
     .header-semillas,
-    .header-dias { order: unset; flex: 1; }
+    .header-utilidad,
+    .header-dias { order: unset; flex: 0 0 auto; }
+    .header-bosque { flex: 1; }
+    .header-info   { flex: 1; flex-direction: column; flex-wrap: nowrap; justify-content: center; padding: 0; }
+    .header-dias   { flex: 1; justify-content: flex-end; border-left: none; padding-left: 0; }
 
     .criatura-sprite img { width: 120px; height: 120px; }
     .criatura-aura       { width: 95px;  height: 95px; }
