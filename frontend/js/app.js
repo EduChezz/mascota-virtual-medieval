@@ -24,12 +24,12 @@ const MODOS = {
     demo : {
         nombre    : 'Demo',
         cooldowns : {
-            alimentar : 5,
-            jugar     : 5,
-            dormir    : 5,
-            bañar     : 5,
-            meditar   : 5,
-            hablar    : 5
+            alimentar : 8,
+            jugar     : 8,
+            dormir    : 8,
+            bañar     : 8,
+            meditar   : 8,
+            hablar    : 8
         }
     }
 }
@@ -1956,14 +1956,103 @@ document.getElementById('btn-silenciar')?.addEventListener('click', () => {
     GestorAudio.toggleSilencio()
 })
 
+// ════════════════════════════════════════════
+// MODAL DE CONFIRMACIÓN
+// ════════════════════════════════════════════
+
+function mostrarConfirmacion(texto, onSi) {
+    const modal  = document.getElementById('modal-confirmacion')
+    const txtEl  = document.getElementById('modal-confirm-texto')
+    const btnSi  = document.getElementById('modal-confirm-si')
+    const btnNo  = document.getElementById('modal-confirm-no')
+    if (!modal) { onSi(); return }
+
+    txtEl.textContent = texto
+    modal.classList.remove('oculto')
+
+    const cerrar = () => modal.classList.add('oculto')
+
+    // Reemplazar listeners previos con clones para evitar duplicados
+    const nuevoSi = btnSi.cloneNode(true)
+    const nuevoNo = btnNo.cloneNode(true)
+    btnSi.replaceWith(nuevoSi)
+    btnNo.replaceWith(nuevoNo)
+
+    nuevoSi.addEventListener('click', () => { cerrar(); onSi() })
+    nuevoNo.addEventListener('click', cerrar)
+    modal.addEventListener('click', e => { if (e.target === modal) cerrar() }, { once: true })
+}
+
+// ════════════════════════════════════════════
+// IR AL MENÚ PRINCIPAL
+// ════════════════════════════════════════════
+
+function irAlMenu() {
+    // Detener todos los ticks
+    if (estado.tickInterval) { clearInterval(estado.tickInterval); estado.tickInterval = null }
+    if (tickDemoInterval)    { clearInterval(tickDemoInterval); tickDemoInterval = null }
+
+    // Actualizar info del botón Continuar antes de mostrar el menú
+    if (estado.datosCriatura) {
+        const btnContinuar = document.getElementById('btn-titulo-continuar')
+        const infoEl       = document.getElementById('continuar-info')
+        if (btnContinuar) {
+            btnContinuar.classList.remove('oculto')
+            if (infoEl && estado.datosCriatura.nombre) {
+                const dias = (estado.datosCriatura.diasVividos ?? 0) + 1
+                infoEl.textContent = `${estado.datosCriatura.nombre} · Día ${dias}`
+            }
+        }
+    }
+
+    // Mostrar la pantalla título con transición
+    GestorAudio.pausarMusica()
+    mostrarBotonesJuego(false)
+
+    Object.values(dom.pantallas).forEach(p => {
+        p.classList.remove('activa')
+        p.style.display = 'none'
+        p.style.opacity = '0'
+    })
+
+    const titulo = document.getElementById('pantalla-titulo')
+    titulo.style.display    = 'flex'
+    titulo.style.opacity    = '0'
+    titulo.style.transition = 'opacity 0.8s ease'
+    setTimeout(() => {
+        titulo.style.opacity = '1'
+        titulo.classList.add('activa')
+    }, 50)
+    estado.pantalla = 'titulo'
+}
+
+// ── Botón Menú — dentro del juego ────────────────────────────────────────────
+document.getElementById('btn-menu')?.addEventListener('click', () => {
+    irAlMenu()
+})
+
 // ── Botón "Comenzar el Juego" (nueva partida) ─────────────────────────────────
 document.getElementById('btn-titulo-comenzar')?.addEventListener('click', () => {
-    GestorAudio.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
-    ocultarPantallaTitulo()
-    setTimeout(() => {
-        iniciarIntro()
-        mostrarPantalla('intro')
-    }, 1000)
+    if (estado.datosCriatura) {
+        // Hay partida activa — pedir confirmación antes de borrarla
+        mostrarConfirmacion(
+            '¿Empezar una nueva partida? Se perderá todo el progreso actual de ' +
+            (estado.datosCriatura.nombre || 'tu criatura') + '.',
+            async () => {
+                try { await fetch(`${API}/reiniciar`, { method: 'DELETE' }) } catch(e) {}
+                estado.datosCriatura  = null
+                estado.estadoAnterior = null
+                document.getElementById('btn-titulo-continuar')?.classList.add('oculto')
+                GestorAudio.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
+                ocultarPantallaTitulo()
+                setTimeout(() => { iniciarIntro(); mostrarPantalla('intro') }, 1000)
+            }
+        )
+    } else {
+        GestorAudio.reproducirMusica('/assets/sounds/ambiente/intro_medieval.mp3')
+        ocultarPantallaTitulo()
+        setTimeout(() => { iniciarIntro(); mostrarPantalla('intro') }, 1000)
+    }
 })
 
 // ── Botón "Continuar Partida" (retomar partida activa) ────────────────────────

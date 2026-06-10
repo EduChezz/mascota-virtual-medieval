@@ -823,6 +823,64 @@ body {
     transform  : scale(1.1);
 }
 
+/* ── Botón Menú — en el header ── */
+.btn-menu {
+    width         : 2.2rem;
+    height        : 2.2rem;
+    background    : rgba(0,0,0,0.45);
+    border        : 1px solid rgba(127,255,127,0.35);
+    border-radius : 50%;
+    font-size     : 1rem;
+    cursor        : pointer;
+    display       : flex;
+    align-items   : center;
+    justify-content: center;
+    transition    : background 0.2s, transform 0.15s;
+    flex-shrink   : 0;
+    margin-right  : 0.25rem;
+}
+.btn-menu:hover {
+    background : rgba(45,110,78,0.5);
+    transform  : scale(1.1);
+}
+
+/* ── Modal de Confirmación ── */
+.modal-confirm {
+    position        : fixed;
+    inset           : 0;
+    z-index         : 9999;
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    background      : rgba(0,0,0,0.75);
+    backdrop-filter : blur(4px);
+    animation       : fadeIn 0.2s ease;
+}
+.modal-confirm.oculto { display: none; }
+
+.modal-confirm-caja {
+    background    : rgba(10,10,20,0.97);
+    border        : 1px solid rgba(200,169,110,0.4);
+    border-radius : 12px;
+    padding       : 2rem 2.5rem;
+    max-width     : 360px;
+    width         : 90%;
+    text-align    : center;
+    box-shadow    : var(--glow-dorado);
+}
+.modal-confirm-texto {
+    font-family   : var(--font-principal);
+    font-size     : 1rem;
+    color         : var(--color-texto);
+    line-height   : 1.6;
+    margin-bottom : 1.5rem;
+}
+.modal-confirm-botones {
+    display : flex;
+    gap     : 1rem;
+    justify-content: center;
+}
+
 /* ── Botón avanzar demo ── */
 .demo-avanzar {
     background : linear-gradient(135deg, rgba(74,20,74,0.9), rgba(110,40,110,0.9)) !important;

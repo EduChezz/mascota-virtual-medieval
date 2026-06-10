@@ -272,6 +272,7 @@
                 </button>
             </div>
             <div class="header-dias">
+                <button id="btn-menu" class="btn-menu" title="Volver al menú">🏠</button>
                 <button id="btn-silenciar" class="btn-silenciar" title="Silenciar/Activar sonido">🔊</button>
                 <span class="header-label">Día</span>
                 <span id="dias-vividos" class="dias-numero">1</span>
@@ -520,6 +521,19 @@
     <button class="btn-historial-flotante" id="btn-abrir-historial" title="Ver historial">
         📜
     </button>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- MODAL CONFIRMACIÓN                     -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="modal-confirmacion" class="modal-confirm oculto">
+        <div class="modal-confirm-caja">
+            <p id="modal-confirm-texto" class="modal-confirm-texto"></p>
+            <div class="modal-confirm-botones">
+                <button id="modal-confirm-si"  class="btn-primario">Sí, continuar</button>
+                <button id="modal-confirm-no" class="btn-secundario">Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="/js/app.js" defer></script>
     <!-- ══════════════════════════════════════ -->

@@ -39,7 +39,7 @@ export class AccionAlimentar extends AccionBase {
                 sobrealimento : true
             }
         }
-        estadisticas.modificar('hambre',    -30)
+        estadisticas.modificar('hambre',    -25)
         estadisticas.modificar('vitalidad', +10)
         return {
             mensaje       : 'Le diste alimento a la criatura. El bosque agradece.',
@@ -48,7 +48,7 @@ export class AccionAlimentar extends AccionBase {
         }
     }
 
-    getEfectos() { return { hambre: -30, vitalidad: +10 } }
+    getEfectos() { return { hambre: -25, vitalidad: +10 } }
 }
 
 // ── 2. JUGAR ──────────────────────────────────
@@ -56,7 +56,7 @@ export class AccionJugar extends AccionBase {
     constructor() { super('jugar', 60) }
 
     ejecutar(estadisticas) {
-        estadisticas.modificar('espiritu', +25)
+        estadisticas.modificar('espiritu', +15)
         estadisticas.modificar('energia',  -15)
         estadisticas.modificar('vinculo',  +10)
         return {
@@ -65,7 +65,7 @@ export class AccionJugar extends AccionBase {
         }
     }
 
-    getEfectos() { return { espiritu: +25, energia: -15, vinculo: +10 } }
+    getEfectos() { return { espiritu: +15, energia: -15, vinculo: +10 } }
 }
 
 // ── 3. DORMIR ─────────────────────────────────
@@ -73,7 +73,7 @@ export class AccionDormir extends AccionBase {
     constructor() { super('dormir', 480) }
 
     ejecutar(estadisticas) {
-        estadisticas.modificar('energia',   +40)
+        estadisticas.modificar('energia',   +30)
         estadisticas.modificar('vitalidad', +5)
         return {
             mensaje : 'La criatura descansa... el bosque respira tranquilo.',
@@ -81,8 +81,7 @@ export class AccionDormir extends AccionBase {
         }
     }
 
-    getEfectos() { return { energia: +40, vitalidad: +5 } }
-}
+    getEfectos() { return { energia: +30, vitalidad: +5 } }
 
 // ── 4. BAÑAR ──────────────────────────────────
 export class AccionBañar extends AccionBase {
@@ -105,16 +104,16 @@ export class AccionMeditar extends AccionBase {
     constructor() { super('meditar', 360) }
 
     ejecutar(estadisticas) {
-        estadisticas.modificar('vinculo',  +20)
+        estadisticas.modificar('vinculo',  +15)
         estadisticas.modificar('espiritu', +10)
         return {
             mensaje  : 'Meditas junto a la criatura. El vínculo se fortalece.',
             efectos  : this.getEfectos(),
-            semillas : 3   // ← gana semillas al meditar
+            semillas : 3
         }
     }
 
-    getEfectos() { return { vinculo: +20, espiritu: +10 } }
+    getEfectos() { return { vinculo: +15, espiritu: +10 } }
 }
 
 // ── 6. HABLAR ─────────────────────────────────

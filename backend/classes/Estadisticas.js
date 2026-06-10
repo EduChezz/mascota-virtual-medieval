@@ -41,14 +41,17 @@ export class Estadisticas {
     // para que el jugador tenga tiempo de reaccionar
 
     degradar() {
-        // hambre sube sola (más lento que antes)
+        // hambre sube sola
         this.modificar('hambre', +2)
 
-        // espíritu baja solo (más lento)
-        this.modificar('espiritu', -1)
+        // espíritu baja más rápido — necesita jugar/meditar regularmente
+        this.modificar('espiritu', -2)
 
-        // energía baja sola (más lento)
+        // energía baja sola
         this.modificar('energia', -1)
+
+        // vínculo se debilita — necesita atención constante
+        this.modificar('vinculo', -1)
 
         // vitalidad baja más rápido si hay urgencias
         if (this.hambre > 70) {
@@ -56,7 +59,7 @@ export class Estadisticas {
         } else if (this.vinculo < 20) {
             this.modificar('vitalidad', -2)  // urgencia vínculo
         } else {
-            this.modificar('vitalidad', -1)  // normal (muy lento)
+            this.modificar('vitalidad', -1)  // normal
         }
     }
 
