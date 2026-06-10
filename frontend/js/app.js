@@ -573,7 +573,6 @@ const Huevo = {
             if (this.countdownActivo && this.calor < this.maxCalor) {
                 this.countdownActivo = false
                 clearInterval(this.intervalCountdown)
-                this.elementos.countdown.textContent = ''
             }
             let bajada = 5
             if (this.calor >= 67) bajada = 2
@@ -587,7 +586,6 @@ const Huevo = {
         this.countdownActivo = true
         this.countdownValor  = 5
         const e = this.elementos
-        e.countdown.textContent = `${this.countdownValor}...`
         GestorAudio._fadeOut(GestorAudio.canales.musica, 1000, () => {
             setTimeout(() => {
                 GestorAudio.canales.efecto        = new Audio('/assets/sounds/eventos/evolucion.mp3')
@@ -598,7 +596,6 @@ const Huevo = {
         this.intervalCountdown = setInterval(() => {
             if (this.calor < this.maxCalor) {
                 this.countdownActivo = false
-                e.countdown.textContent = ''
                 clearInterval(this.intervalCountdown)
                 if (GestorAudio.canales.efecto) {
                     GestorAudio._fadeOut(GestorAudio.canales.efecto, 500, () => {
@@ -609,7 +606,6 @@ const Huevo = {
                 return
             }
             this.countdownValor--
-            e.countdown.textContent = this.countdownValor > 0 ? `${this.countdownValor}...` : '✨'
             if (this.countdownValor <= 0) {
                 clearInterval(this.intervalCountdown)
                 this.eclosionar()
@@ -641,7 +637,6 @@ const Huevo = {
         setTimeout(() => {
             document.getElementById('fase-calentamiento').classList.add('oculto')
             document.getElementById('fase-nombre').classList.remove('oculto')
-            e.countdown.textContent = ''
         }, 1800)
     },
 
@@ -885,9 +880,11 @@ function actualizarImagenCriatura(imagenActual, fase, tipo) {
         const rutaPng = imagenActual?.replace('.gif', '.png')
         if (rutaPng && !img.src.includes('.png')) {
             img.src = rutaPng
-        } else {
-            dom.criaturaSprite.innerHTML      = fase === 'huevo' ? '🥚' : '🐾'
+        } else if (fase === 'huevo') {
+            dom.criaturaSprite.innerHTML      = '🥚'
             dom.criaturaSprite.style.fontSize = '7rem'
+        } else {
+            img.src = '/assets/images/criatura/sylvae_base_paz.gif'
         }
     }
     dom.criaturaSprite.appendChild(img)
