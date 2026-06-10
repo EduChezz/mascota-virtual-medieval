@@ -46,6 +46,9 @@ const GestorAudio = {
     silenciado : false,
     ultimaSonidoCriatura : 0,
     cooldownCriatura     : 45000,
+    _timers      : new Map(),   // audio → setInterval ID activo
+    _efectoTimer : null,        // timeout del duracionMax del efecto
+    _pausaTimer  : null,        // timeout de restaurar música tras pausarMusica
 
     silenciar() {
         this.silenciado = true
@@ -69,50 +72,63 @@ const GestorAudio = {
         if (this.silenciado) return
         if (this.canales.musica?.src?.includes(ruta)) return
         this._fadeOut(this.canales.musica, 2000, () => {
-            this.canales.musica        = new Audio(ruta)
-            this.canales.musica.loop   = true
-            this.canales.musica.volume = 0
-            this.canales.musica.play().catch(() => {})
-            this._fadeIn(this.canales.musica, 2000, this.volumenes.musica)
+            const audio        = new Audio(ruta)
+            audio.loop         = true
+            audio.volume       = 0
+            this.canales.musica = audio
+            audio.play().catch(() => {})
+            this._fadeIn(audio, 2000, this.volumenes.musica)
         })
     },
 
     pausarMusica(duracion = 0) {
         if (!this.canales.musica) return
-        this._fadeOut(this.canales.musica, 1000, () => {
+        if (this._pausaTimer) { clearTimeout(this._pausaTimer); this._pausaTimer = null }
+        this._fadeOut(this.canales.musica, 800, () => {
+            if (!this.canales.musica) return
             this.canales.musica.pause()
             if (duracion > 0) {
-                setTimeout(() => {
+                this._pausaTimer = setTimeout(() => {
+                    this._pausaTimer = null
+                    if (!this.canales.musica) return
                     this.canales.musica.play().catch(() => {})
-                    this._fadeIn(this.canales.musica, 1000, this.volumenes.musica)
+                    this._fadeIn(this.canales.musica, 800, this.volumenes.musica)
                 }, duracion)
             }
         })
     },
 
-    reproducirEfecto(ruta, duracionMax = 30000) {
+    reproducirEfecto(ruta, duracionMax = 8000) {
         if (this.silenciado) return
+        // cancelar efecto anterior
+        if (this._efectoTimer) { clearTimeout(this._efectoTimer); this._efectoTimer = null }
         if (this.canales.efecto) {
+            this._cancelarFade(this.canales.efecto)
             this.canales.efecto.pause()
             this.canales.efecto = null
         }
+        // bajar volumen de música
         if (this.canales.musica) {
-            this._fadeVolumen(this.canales.musica, this.volumenes.musica * 0.4, 500)
+            this._fadeVolumen(this.canales.musica, this.volumenes.musica * 0.4, 400)
         }
-        this.canales.efecto        = new Audio(ruta)
-        this.canales.efecto.volume = this.volumenes.efecto
-        this.canales.efecto.play().catch(() => {})
-        const timeout = setTimeout(() => {
-            if (this.canales.efecto) {
-                this._fadeOut(this.canales.efecto, 1000)
-                this.canales.efecto = null
-            }
+        const audio        = new Audio(ruta)
+        audio.volume       = this.volumenes.efecto
+        this.canales.efecto = audio
+        audio.play().catch(() => {})
+        const restaurar = () => {
+            if (this.canales.efecto === audio) this.canales.efecto = null
             this._restaurarMusica()
+        }
+        this._efectoTimer = setTimeout(() => {
+            this._efectoTimer = null
+            this._cancelarFade(audio)
+            audio.pause()
+            restaurar()
         }, duracionMax)
-        this.canales.efecto.onended = () => {
-            clearTimeout(timeout)
-            this.canales.efecto = null
-            this._restaurarMusica()
+        audio.onended = () => {
+            clearTimeout(this._efectoTimer)
+            this._efectoTimer = null
+            restaurar()
         }
     },
 
@@ -120,35 +136,53 @@ const GestorAudio = {
         if (this.silenciado) return
         const ahora = Date.now()
         if (ahora - this.ultimaSonidoCriatura < this.cooldownCriatura) return
-        this.ultimaSonidoCriatura    = ahora
-        this.canales.criatura        = new Audio(ruta)
-        this.canales.criatura.volume = this.volumenes.criatura
-        this.canales.criatura.play().catch(() => {})
+        this.ultimaSonidoCriatura = ahora
+        if (this.canales.criatura) {
+            this._cancelarFade(this.canales.criatura)
+            this.canales.criatura.pause()
+            this.canales.criatura = null
+        }
+        const audio          = new Audio(ruta)
+        audio.volume         = this.volumenes.criatura
+        this.canales.criatura = audio
+        audio.play().catch(() => {})
+        audio.onended = () => { if (this.canales.criatura === audio) this.canales.criatura = null }
     },
 
-    reproducirEvento(ruta, pausaMusica = 4000) {
-        this.pausarMusica(pausaMusica)
-        setTimeout(() => this.reproducirEfecto(ruta, pausaMusica), 500)
+    reproducirEvento(ruta, duracion = 6000) {
+        // reproducirEfecto ya se encarga de bajar y restaurar la música
+        this.reproducirEfecto(ruta, duracion)
     },
 
     detenerTodo() {
-        ['musica','efecto','criatura'].forEach(canal => {
+        if (this._efectoTimer) { clearTimeout(this._efectoTimer); this._efectoTimer = null }
+        if (this._pausaTimer)  { clearTimeout(this._pausaTimer);  this._pausaTimer  = null }
+        ;['musica','efecto','criatura'].forEach(canal => {
             if (this.canales[canal]) {
+                this._cancelarFade(this.canales[canal])
                 this.canales[canal].pause()
                 this.canales[canal].currentTime = 0
                 this.canales[canal] = null
             }
         })
+        this._timers.clear()
     },
 
     _restaurarMusica() {
         if (this.canales.musica) {
-            this._fadeVolumen(this.canales.musica, this.volumenes.musica, 1000)
+            this._fadeVolumen(this.canales.musica, this.volumenes.musica, 800)
         }
+    },
+
+    _cancelarFade(audio) {
+        if (!audio) return
+        const t = this._timers.get(audio)
+        if (t !== undefined) { clearInterval(t); this._timers.delete(audio) }
     },
 
     _fadeIn(audio, duracion, volumenFinal) {
         if (!audio) return
+        this._cancelarFade(audio)
         audio.volume = 0
         const pasos = 20, intervalo = duracion / pasos
         const incremento = volumenFinal / pasos
@@ -156,36 +190,42 @@ const GestorAudio = {
         const timer = setInterval(() => {
             paso++
             audio.volume = Math.min(volumenFinal, audio.volume + incremento)
-            if (paso >= pasos) clearInterval(timer)
+            if (paso >= pasos) { clearInterval(timer); this._timers.delete(audio) }
         }, intervalo)
+        this._timers.set(audio, timer)
     },
 
     _fadeOut(audio, duracion, callback) {
         if (!audio) { if (callback) callback(); return }
+        this._cancelarFade(audio)
         const pasos = 20, intervalo = duracion / pasos
-        const decremento = audio.volume / pasos
+        const decremento = Math.max(audio.volume, 0.01) / pasos
         let paso = 0
         const timer = setInterval(() => {
             paso++
             audio.volume = Math.max(0, audio.volume - decremento)
             if (paso >= pasos) {
                 clearInterval(timer)
+                this._timers.delete(audio)
                 audio.pause()
                 if (callback) callback()
             }
         }, intervalo)
+        this._timers.set(audio, timer)
     },
 
     _fadeVolumen(audio, volumenFinal, duracion) {
         if (!audio) return
+        this._cancelarFade(audio)
         const pasos = 10, intervalo = duracion / pasos
         const diferencia = (volumenFinal - audio.volume) / pasos
         let paso = 0
         const timer = setInterval(() => {
             paso++
             audio.volume = Math.max(0, Math.min(1, audio.volume + diferencia))
-            if (paso >= pasos) clearInterval(timer)
+            if (paso >= pasos) { clearInterval(timer); this._timers.delete(audio) }
         }, intervalo)
+        this._timers.set(audio, timer)
     },
 
     getMusicaBosque(salud) {
@@ -586,14 +626,7 @@ const Huevo = {
     iniciarCountdown() {
         this.countdownActivo = true
         this.countdownValor  = 5
-        const e = this.elementos
-        GestorAudio._fadeOut(GestorAudio.canales.musica, 1000, () => {
-            setTimeout(() => {
-                GestorAudio.canales.efecto        = new Audio('/assets/sounds/eventos/evolucion.mp3')
-                GestorAudio.canales.efecto.volume = 0.7
-                GestorAudio.canales.efecto.play().catch(() => {})
-            }, 300)
-        })
+        GestorAudio.reproducirEfecto('/assets/sounds/eventos/evolucion.mp3', 7000)
         this.intervalCountdown = setInterval(() => {
             if (this.calor < this.maxCalor) {
                 this.countdownActivo = false
@@ -601,7 +634,7 @@ const Huevo = {
                 if (GestorAudio.canales.efecto) {
                     GestorAudio._fadeOut(GestorAudio.canales.efecto, 500, () => {
                         GestorAudio.canales.efecto = null
-                        GestorAudio.reproducirMusica('/assets/sounds/eventos/nacimiento.mp3')
+                        GestorAudio._restaurarMusica()
                     })
                 }
                 return
@@ -953,7 +986,7 @@ function actualizarBotonesAccion(accionesDisponibles) {
 function actualizarBadgeTendencia(tendencia, diasVividos, fase) {
     const badge = document.getElementById('badge-tendencia')
     if (!badge) return
-    if (!tendencia || fase === 'huevo') { badge.classList.add('oculto'); return }
+    if (!tendencia) { badge.classList.add('oculto'); return }
     badge.classList.remove('oculto')
     ;['natura','umbra','ignis','aqua','aether','umbris'].forEach(c => badge.classList.remove(c))
     if (tendencia.tipo) badge.classList.add(tendencia.tipo)
@@ -997,7 +1030,7 @@ dom.botonesAccion.forEach(btn => {
 async function ejecutarAccion(nombreAccion, btn) {
     btn.disabled = true
     const cooldownSegundos = MODOS[modoActual].cooldowns[nombreAccion] || 60
-    GestorAudio.reproducirEfecto(`/assets/sounds/acciones/${nombreAccion}.mp3`, 30000)
+    GestorAudio.reproducirEfecto(`/assets/sounds/acciones/${nombreAccion}.mp3`, 8000)
     _reaccionSylvae(nombreAccion)
     try {
         const res  = await fetch(`${API}/accion`, {

@@ -12,7 +12,7 @@ export class Criatura {
 
     constructor(nombre) {
         this.nombre          = nombre
-        this.fase            = 'huevo'
+        this.fase            = 'base'
         this.tipoEvolucion   = null
         this.diasVividos     = 0
         this.diasMaximos     = 100
@@ -75,15 +75,6 @@ export class Criatura {
     // ════════════════════════════════════════
 
     _evaluarFase() {
-        if (this.diasVividos === 1 && this.fase === 'huevo') {
-            this.fase = 'base'
-            this._notificarObservadores('evolucion', {
-                faseAnterior: 'huevo', faseNueva: 'base', tipo: null,
-                mensaje: '¡El huevo ha eclosionado! Sylvae ha nacido.'
-            })
-            return
-        }
-
         if (this.diasVividos === 50 && this.fase === 'base') {
             const tendencia = this.estadisticas.getTendenciaEvolucion()
             this.tipoEvolucion = tendencia.tipo
@@ -154,7 +145,6 @@ export class Criatura {
     getEstadisticas()  { return this.estadisticas  }
 
     getImagenActual() {
-        if (this.fase === 'huevo') return '/assets/images/criatura/huevo.png'
         return this.estadoActual?.getImagenCriatura()
             || '/assets/images/criatura/sylvae_base_paz.gif'
     }
@@ -278,7 +268,7 @@ export class Criatura {
 
     static fromObject(obj) {
         const c = new Criatura(obj.nombre)
-        c.fase              = obj.fase
+        c.fase              = obj.fase === 'huevo' ? 'base' : obj.fase
         c.tipoEvolucion     = obj.tipoEvolucion || null
         c.diasVividos       = obj.diasVividos
         c.diasMaximos       = obj.diasMaximos || 100
