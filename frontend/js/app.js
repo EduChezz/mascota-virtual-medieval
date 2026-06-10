@@ -845,6 +845,7 @@ function actualizarJuego(datos) {
     actualizarParticulas(saludBosque, tipoEvolucion)
     actualizarBadgeTendencia(tendencia, diasVividos, fase)
     actualizarUrgencias(urgencias, nombre)
+    actualizarGuia(datos)
 
     // ── Alerta bosque crítico ────────────────
     const pantallaJuego = document.getElementById('pantalla-juego')
@@ -893,6 +894,20 @@ function actualizarStat(nombre, valor) {
     if (!stat) return
     stat.barra.style.width = `${valor}%`
     stat.val.textContent   = Math.round(valor)
+
+    // Color feedback: warn when stat is critical
+    stat.barra.classList.remove('stat-critica', 'stat-aviso')
+    const esCritica = (nombre === 'vitalidad' && valor < 25)
+                   || (nombre === 'hambre'     && valor > 75)
+                   || (nombre === 'energia'    && valor < 20)
+                   || (nombre === 'vinculo'    && valor < 25)
+    const esAviso   = (nombre === 'vitalidad' && valor < 50 && valor >= 25)
+                   || (nombre === 'hambre'     && valor > 55 && valor <= 75)
+                   || (nombre === 'espiritu'   && valor < 35)
+                   || (nombre === 'energia'    && valor < 40 && valor >= 20)
+                   || (nombre === 'vinculo'    && valor < 40 && valor >= 25)
+    if (esCritica) stat.barra.classList.add('stat-critica')
+    else if (esAviso) stat.barra.classList.add('stat-aviso')
 }
 
 function actualizarFondoBosque(salud) {
@@ -1036,6 +1051,159 @@ function actualizarUrgencias(urgencias, nombre) {
 
 function limpiarUrgencias() {
     if (urgenciaOverlay) urgenciaOverlay.className = 'urgencia-overlay'
+}
+
+// ════════════════════════════════════════════
+// PANEL DE GUÍA — dice al jugador qué hacer
+// ════════════════════════════════════════════
+
+function actualizarGuia(datos) {
+    const panel = document.getElementById('guia-panel')
+    if (!panel) return
+    const { estadisticas, bosque, inventario } = datos || {}
+    if (!estadisticas) return
+
+    const { vitalidad, hambre, espiritu, energia, vinculo } = estadisticas
+    const saludBosque = bosque?.salud ?? 50
+
+    // Determinar la situación más urgente
+    let prioridad    = 'ok'
+    let icono        = '✨'
+    let titulo       = '¡Sylvae está bien!'
+    let consejo      = 'Sigue cuidando a Sylvae. Cada acción mantiene el bosque vivo.'
+    let accionBtn    = null
+    let accionLabel  = ''
+
+    if (vitalidad < 20) {
+        prioridad   = 'peligro'
+        icono       = '🚨'
+        titulo      = '¡PELIGRO! Sylvae puede morir'
+        consejo     = 'La vitalidad está crítica. Báñala (❤️+15) o aliméntala (❤️+10) ahora mismo.'
+        accionBtn   = 'bañar'
+        accionLabel = '💧 Bañar ahora'
+    } else if (hambre > 80) {
+        prioridad   = 'urgente'
+        icono       = '🍃'
+        titulo      = 'Sylvae tiene mucha hambre'
+        consejo     = 'El hambre alta daña la vitalidad con cada minuto. ¡Aliméntala pronto!'
+        accionBtn   = 'alimentar'
+        accionLabel = '🍃 Alimentar'
+    } else if (energia < 20) {
+        prioridad   = 'urgente'
+        icono       = '💤'
+        titulo      = 'Sylvae está agotada'
+        consejo     = 'Sin energía no puede jugar ni crecer bien. Hazla dormir (⚡+40).'
+        accionBtn   = 'dormir'
+        accionLabel = '🌙 Dormir'
+    } else if (vinculo < 25) {
+        prioridad   = 'urgente'
+        icono       = '💔'
+        titulo      = 'El vínculo se está rompiendo'
+        consejo     = 'Sylvae se siente sola. Háblale (💚+5) o medita juntos (💚+20, 🌱+3 semillas).'
+        accionBtn   = 'hablar'
+        accionLabel = '💬 Hablar'
+    } else if (hambre > 60) {
+        prioridad   = 'aviso'
+        icono       = '🍃'
+        titulo      = 'Sylvae empieza a tener hambre'
+        consejo     = 'Si el hambre pasa de 70, la vitalidad empieza a bajar. ¡Aliméntala!'
+        accionBtn   = 'alimentar'
+        accionLabel = '🍃 Alimentar'
+    } else if (espiritu < 35) {
+        prioridad   = 'aviso'
+        icono       = '✨'
+        titulo      = 'El espíritu de Sylvae decae'
+        consejo     = 'Para estar feliz necesita espíritu > 75. Juega con ella (✨+25) o medita (✨+10).'
+        accionBtn   = 'jugar'
+        accionLabel = '🎵 Jugar'
+    } else if (saludBosque < 30) {
+        if ((inventario?.semilla_sagrada ?? 0) > 0) {
+            prioridad   = 'urgente'
+            icono       = '🌿'
+            titulo      = 'El bosque agoniza — ¡usa tu Semilla!'
+            consejo     = 'Tienes una Semilla Sagrada en la mochila. Úsala para sanar el bosque (+25).'
+            accionBtn   = 'mochila'
+            accionLabel = '🎒 Abrir mochila'
+        } else {
+            prioridad   = 'aviso'
+            icono       = '🌿'
+            titulo      = 'El bosque enferma'
+            consejo     = 'Cuida más a Sylvae. Cada acción da salud al bosque. Meditar da +6.'
+            accionBtn   = 'meditar'
+            accionLabel = '🌿 Meditar'
+        }
+    } else if (vitalidad < 50) {
+        prioridad   = 'info'
+        icono       = '💡'
+        titulo      = 'Tip: la vitalidad baja'
+        consejo     = 'Báñala (❤️+15) o aliméntala (❤️+10) para recuperar vitalidad.'
+        accionBtn   = 'bañar'
+        accionLabel = '💧 Bañar'
+    } else if (vinculo < 50) {
+        prioridad   = 'info'
+        icono       = '💡'
+        titulo      = 'Tip: el vínculo puede mejorar'
+        consejo     = 'Habla con Sylvae o medita juntos. La meditación también da 3 semillas 🌱.'
+        accionBtn   = 'meditar'
+        accionLabel = '🌿 Meditar'
+    } else if (espiritu < 65) {
+        prioridad   = 'info'
+        icono       = '💡'
+        titulo      = 'Tip: sube el espíritu'
+        consejo     = 'Para que Sylvae esté feliz necesita espíritu > 75. Juega con ella.'
+        accionBtn   = 'jugar'
+        accionLabel = '🎵 Jugar'
+    } else if (saludBosque < 60) {
+        prioridad   = 'info'
+        icono       = '🌿'
+        titulo      = 'Tip: el bosque puede mejorar'
+        consejo     = 'Meditar da +6 al bosque y 3 semillas 🌱. ¡La mejor acción para el bosque!'
+        accionBtn   = 'meditar'
+        accionLabel = '🌿 Meditar'
+    } else {
+        // Todo bien — sugerir para llegar a estado feliz
+        if (espiritu < 75 || vinculo < 65) {
+            prioridad   = 'ok'
+            icono       = '🌟'
+            titulo      = 'Casi perfecta'
+            if (espiritu < 75) {
+                consejo   = 'Para que Sylvae esté feliz necesita espíritu > 75. ¡Juega con ella!'
+                accionBtn = 'jugar'
+                accionLabel = '🎵 Jugar'
+            } else {
+                consejo   = 'El vínculo necesita > 65 para que Sylvae sea feliz. ¡Medita o habla!'
+                accionBtn = 'meditar'
+                accionLabel = '🌿 Meditar'
+            }
+        }
+    }
+
+    // Construir HTML
+    const btnHTML = accionBtn
+        ? `<button class="guia-btn" data-guia-accion="${accionBtn}">${accionLabel}</button>`
+        : ''
+
+    panel.innerHTML = `
+        <div class="guia-indicador"></div>
+        <div class="guia-contenido">
+            <div class="guia-titulo">${icono} ${titulo}</div>
+            <div class="guia-consejo">${consejo}</div>
+            ${btnHTML}
+        </div>`
+    panel.className = `guia-panel guia-${prioridad}`
+
+    // Listener del botón de acción rápida
+    const btn = panel.querySelector('.guia-btn')
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const accion = btn.dataset.guiaAccion
+            if (accion === 'mochila') {
+                document.getElementById('btn-mochila')?.click()
+            } else {
+                document.querySelector(`.btn-accion[data-accion="${accion}"]`)?.click()
+            }
+        })
+    }
 }
 
 // ════════════════════════════════════════════
