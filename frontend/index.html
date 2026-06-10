@@ -242,43 +242,45 @@
 
         <!-- header -->
         <header class="juego-header">
-            <div class="header-bosque">
-                <span class="header-label">🌳 Bosque</span>
-                <div class="bosque-barra-wrap">
-                    <div class="barra-contenedor">
-                        <div class="barra barra-bosque" id="barra-bosque"></div>
+            <!-- Fila 1: barra del bosque + contador de días -->
+            <div class="header-fila fila-superior">
+                <div class="header-bosque">
+                    <span class="header-label">🌳 Bosque</span>
+                    <div class="bosque-barra-wrap">
+                        <div class="barra-contenedor">
+                            <div class="barra barra-bosque" id="barra-bosque"></div>
+                        </div>
+                        <div class="bosque-marcadores" aria-hidden="true">
+                            <span style="left:25%"></span>
+                            <span style="left:50%"></span>
+                            <span style="left:75%"></span>
+                        </div>
                     </div>
-                    <div class="bosque-marcadores" aria-hidden="true">
-                        <span style="left:25%"></span>
-                        <span style="left:50%"></span>
-                        <span style="left:75%"></span>
-                    </div>
+                    <span class="header-valor" id="valor-bosque">50</span>
                 </div>
-                <span class="header-valor" id="valor-bosque">50</span>
+                <div class="header-dias">
+                    <span class="header-label">Día</span>
+                    <span id="dias-vividos" class="dias-numero">1</span>
+                    <span id="dias-maximos" class="header-label">/ 100</span>
+                </div>
             </div>
-            <div class="header-info">
-                <span id="nombre-criatura" class="criatura-nombre">—</span>
-                <span id="fase-criatura" class="criatura-fase">—</span>
-                <span id="badge-tendencia" class="badge-tendencia oculto"></span>
-            </div>
-            <div class="header-semillas" id="header-semillas">
-                <span class="semillas-icono">🌱</span>
-                <span class="semillas-valor" id="semillas-valor">0</span>
-                <button class="btn-tienda" id="btn-tienda" title="Tienda del Bosque">
-                    🛒
-                </button>
-                <button class="btn-minijuegos" id="btn-minijuegos" title="Ayudar aldeanos">
-                    🏘️
-                </button>
-            </div>
-            <div class="header-utilidad">
-                <button id="btn-menu" class="btn-menu" title="Volver al menú">🏠</button>
-                <button id="btn-silenciar" class="btn-silenciar" title="Silenciar/Activar sonido">🔊</button>
-            </div>
-            <div class="header-dias">
-                <span class="header-label">Día</span>
-                <span id="dias-vividos" class="dias-numero">1</span>
-                <span id="dias-maximos" class="header-label">/ 100</span>
+            <!-- Fila 2: botones utilidad + criatura + semillas -->
+            <div class="header-fila fila-inferior">
+                <div class="header-utilidad">
+                    <button id="btn-menu" class="btn-menu" title="Volver al menú">🏠</button>
+                    <button id="btn-silenciar" class="btn-silenciar" title="Silenciar/Activar sonido">🔊</button>
+                </div>
+                <div class="header-info">
+                    <span id="nombre-criatura" class="criatura-nombre">—</span>
+                    <span id="fase-criatura" class="criatura-fase">—</span>
+                    <span id="badge-tendencia" class="badge-tendencia oculto"></span>
+                </div>
+                <div class="header-semillas" id="header-semillas">
+                    <span class="semillas-icono">🌱</span>
+                    <span class="semillas-valor" id="semillas-valor">0</span>
+                    <button class="btn-tienda" id="btn-tienda" title="Tienda del Bosque">🛒</button>
+                    <button class="btn-minijuegos" id="btn-minijuegos" title="Ayudar aldeanos">🏘️</button>
+                </div>
             </div>
         </header>
 
