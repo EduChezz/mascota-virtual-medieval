@@ -1681,22 +1681,25 @@ button, [role="button"] { touch-action: manipulation; }
     /* ─ Header: 2 filas ─ */
     .juego-header {
         flex-wrap   : wrap;
-        padding     : 0.4rem 0.7rem;
-        gap         : 0.2rem 0;
+        padding     : 0.45rem 0.75rem;
+        gap         : 0.25rem 0;
         align-items : center;
     }
     /* Fila 1: barra del bosque | días */
     .header-bosque {
-        flex     : 1 1 0;
-        order    : 1;
-        min-width: 0;
-        gap      : 0.3rem;
+        flex         : 1 1 0;
+        order        : 1;
+        min-width    : 0;
+        gap          : 0.35rem;
+        padding-right: 0.5rem;
     }
     .header-dias {
         flex            : 0 0 auto;
         order           : 2;
-        gap             : 0.2rem;
+        gap             : 0.3rem;
         justify-content : flex-end;
+        border-left     : 1px solid rgba(255,255,255,0.12);
+        padding-left    : 0.55rem;
     }
     /* Fila 2: info criatura | semillas+botones */
     .header-info {
@@ -1709,59 +1712,76 @@ button, [role="button"] { touch-action: manipulation; }
     .header-semillas {
         flex  : 0 0 auto;
         order : 4;
-        gap   : 0.3rem;
+        gap   : 0.35rem;
     }
 
-    .header-label    { font-size: 0.68rem; }
-    .criatura-nombre { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
-    .criatura-fase   { font-size: 0.62rem; }
-    .badge-tendencia { font-size: 0.6rem; padding: 0.12rem 0.4rem; }
-    .dias-numero     { font-size: 0.95rem; }
-    .semillas-icono  { font-size: 0.85rem; }
-    .semillas-valor  { font-size: 0.85rem; min-width: 20px; }
+    .header-label    { font-size: 0.7rem; }
+    .header-valor    { font-size: 0.82rem; font-weight: bold; }
+    .criatura-nombre { font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 155px; }
+    .criatura-fase   { font-size: 0.65rem; }
+    .badge-tendencia { font-size: 0.62rem; padding: 0.12rem 0.45rem; }
+    .dias-numero     { font-size: 1rem; }
+    .semillas-icono  { font-size: 0.9rem; }
+    .semillas-valor  { font-size: 0.9rem; min-width: 22px; }
     .btn-tienda,
-    .btn-minijuegos  { font-size: 0.95rem; padding: 0.2rem 0.35rem; }
-    .btn-silenciar   { width: 1.75rem; height: 1.75rem; font-size: 0.8rem; margin-right: 0.15rem; }
+    .btn-minijuegos  { font-size: 1rem; padding: 0.2rem 0.4rem; }
+    .btn-silenciar   { width: 1.8rem; height: 1.8rem; font-size: 0.82rem; margin-right: 0.15rem; }
+    .btn-menu        { width: 1.8rem; height: 1.8rem; font-size: 0.82rem; }
 
-    /* ─ Criatura ─ */
-    .criatura-sprite img { width: 200px; height: 200px; }
-    .criatura-aura       { width: 160px; height: 160px; }
-    .criatura-sombra     { width: 60px; height: 10px; bottom: -12px; }
-    .estado-mensaje      { font-size: 0.78rem; margin-top: 0.5rem; padding: 0.3rem 1rem; max-width: 92vw; }
+    /* ─ Criatura — reducida para dar más espacio a controles ─ */
+    .criatura-sprite img { width: 175px; height: 175px; }
+    .criatura-aura       { width: 140px; height: 140px; }
+    .criatura-sombra     { width: 55px;  height: 9px;   bottom: -11px; }
+    .estado-mensaje      { font-size: 0.78rem; margin-top: 0.4rem; padding: 0.25rem 0.9rem; max-width: 92vw; }
 
-    /* ─ Stats ─ */
-    .stats-panel { padding: 0.45rem 0.5rem; gap: 0.2rem; }
-    .stat-item   { min-width: 50px; gap: 0.1rem; }
-    .stat-icono  { font-size: 0.85rem; }
-    .stat-label  { font-size: 0.52rem; }
-    .stat-valor  { font-size: 0.68rem; }
+    /* ─ Stats — más legibles ─ */
+    .stats-panel                  { padding: 0.5rem 0.55rem; gap: 0.25rem; }
+    .stat-item                    { min-width: 52px; gap: 0.15rem; }
+    .stat-icono                   { font-size: 0.9rem; }
+    .stat-label                   { font-size: 0.62rem; }
+    .stat-valor                   { font-size: 0.72rem; }
+    .stats-panel .barra-contenedor{ height: 7px; }
 
     /* ─ Guía ─ */
     .guia-panel   { margin: 0.15rem 0.4rem 0.1rem; padding: 0.35rem 0.55rem; min-height: 36px; gap: 0.4rem; }
-    .guia-titulo  { font-size: 0.72rem; }
-    .guia-consejo { font-size: 0.64rem; }
-    .guia-btn     { font-size: 0.64rem; padding: 2px 8px; margin-top: 3px; }
+    .guia-titulo  { font-size: 0.73rem; }
+    .guia-consejo { font-size: 0.65rem; }
+    .guia-btn     { font-size: 0.65rem; padding: 3px 9px; margin-top: 3px; }
 
-    /* ─ Botones de acción ─ */
+    /* ─ Botones de acción — grid 4 columnas ─ */
     .acciones-panel {
-        padding         : 0.45rem 0.35rem;
-        gap             : 0.25rem;
-        justify-content : space-around;
-        padding-bottom  : calc(0.45rem + env(safe-area-inset-bottom, 0));
+        display               : grid;
+        grid-template-columns : repeat(4, 1fr);
+        gap                   : 0.3rem;
+        padding               : 0.5rem 0.4rem;
+        padding-bottom        : calc(0.5rem + env(safe-area-inset-bottom, 0));
+        justify-content       : unset;
     }
-    .btn-accion {
-        min-width  : 52px;
-        min-height : 68px;
-        padding    : 0.35rem 0.4rem 0.55rem;
-    }
+    .btn-accion,
     .btn-modo {
-        min-width  : 52px;
-        min-height : 68px;
-        padding    : 0.35rem 0.4rem 0.55rem;
+        min-width  : unset;
+        width      : 100%;
+        min-height : 74px;
+        padding    : 0.4rem 0.25rem 0.55rem;
     }
-    .accion-icono { font-size: 1.2rem; }
-    .accion-label { font-size: 0.52rem; }
-    .cooldown-texto { font-size: 0.5rem; }
+    /* Diferenciar botones utilitarios del grupo principal */
+    .btn-mochila,
+    .btn-modo {
+        background : rgba(255,255,255,0.025);
+        opacity    : 0.88;
+    }
+    .accion-icono   { font-size: 1.3rem; }
+    .accion-label   { font-size: 0.62rem; }
+    .cooldown-texto { font-size: 0.52rem; }
+
+    /* ─ Historial flotante — reposicionar sobre acciones ─ */
+    .btn-historial-flotante {
+        bottom    : calc(180px + env(safe-area-inset-bottom, 0));
+        left      : 12px;
+        width     : 42px;
+        height    : 42px;
+        font-size : 1rem;
+    }
 
     /* ─ Intro ─ */
     .intro-contenedor { width: 96%; padding: 1rem 0.8rem; }
@@ -1806,14 +1826,16 @@ button, [role="button"] { touch-action: manipulation; }
 
 /* ── Teléfonos muy pequeños (≤380px) ─────── */
 @media (max-width: 380px) {
-    .criatura-sprite img { width: 165px; height: 165px; }
-    .criatura-aura       { width: 130px; height: 130px; }
+    .criatura-sprite img  { width: 155px; height: 155px; }
+    .criatura-aura        { width: 122px; height: 122px; }
     .btn-accion,
-    .btn-modo            { min-width: 46px; min-height: 62px; }
-    .accion-icono        { font-size: 1.05rem; }
-    .criatura-nombre     { max-width: 115px; font-size: 0.78rem; }
-    .header-semillas     { gap: 0.2rem; }
-    .semillas-valor      { min-width: 16px; }
+    .btn-modo             { min-height: 66px; }
+    .accion-icono         { font-size: 1.15rem; }
+    .accion-label         { font-size: 0.57rem; }
+    .criatura-nombre      { max-width: 115px; font-size: 0.8rem; }
+    .header-semillas      { gap: 0.2rem; }
+    .semillas-valor       { min-width: 16px; }
+    .acciones-panel       { gap: 0.22rem; padding: 0.4rem 0.3rem; }
 }
 
 /* ── Landscape en teléfono ───────────────── */
@@ -1841,9 +1863,16 @@ button, [role="button"] { touch-action: manipulation; }
 
     .guia-panel   { display: none; }
 
-    .acciones-panel { padding: 0.25rem 0.3rem; gap: 0.2rem; }
+    .acciones-panel {
+        display               : flex;
+        flex-wrap             : nowrap;
+        grid-template-columns : unset;
+        padding               : 0.25rem 0.3rem;
+        gap                   : 0.2rem;
+        justify-content       : space-around;
+    }
     .btn-accion,
-    .btn-modo       { min-height: 52px; min-width: 46px; padding: 0.2rem 0.3rem 0.35rem; }
+    .btn-modo       { min-height: 52px; min-width: 46px; width: auto; padding: 0.2rem 0.3rem 0.35rem; }
     .accion-icono   { font-size: 1rem; }
     .accion-label   { font-size: 0.48rem; }
     .cooldown-texto { display: none; }
