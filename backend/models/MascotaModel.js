@@ -9,10 +9,11 @@ const EstadisticasSchema = new mongoose.Schema({
 }, { _id: false })
 
 const BosqueSchema = new mongoose.Schema({
-    salud       : { type: Number, default: 100, min: 0, max: 100 },
-    descripcion : { type: String, default: 'El bosque florece con vida' },
-    color       : { type: String, default: '#2d6e4e' },
-    fondo       : { type: String, default: 'bosque_100' }
+    salud       : { type: Number, default: 50,  min: 0, max: 100 },
+    descripcion : { type: String, default: 'El bosque aguarda tu cuidado' },
+    color       : { type: String, default: '#4a6e3a' },
+    fondo       : { type: String, default: 'bosque_75' },
+    rachaAlta   : { type: Number, default: 0,   min: 0 }
 }, { _id: false })
 
 const RegistroSchema = new mongoose.Schema({
@@ -23,7 +24,7 @@ const RegistroSchema = new mongoose.Schema({
 
 const MascotaSchema = new mongoose.Schema({
     nombre : { type: String, required: true, trim: true, minlength: 2, maxlength: 20 },
-    fase   : { type: String, enum: ['huevo','base','adulta','retorno_feliz','retorno_triste','perdido'], default: 'huevo' },
+    fase   : { type: String, enum: ['huevo','base','adulta','retorno_feliz','retorno_triste','perdido'], default: 'base' },
     tipoEvolucion   : { type: String, default: null },
     diasVividos     : { type: Number, default: 0, min: 0 },
     diasMaximos     : { type: Number, default: 100 },
@@ -50,8 +51,10 @@ const MascotaSchema = new mongoose.Schema({
         nectar_sagrado  : { type: Number, default: 0, min: 0 },
         pocion_energia  : { type: Number, default: 0, min: 0 },
         pocion_vinculo  : { type: Number, default: 0, min: 0 },
-        pocion_curativa : { type: Number, default: 0, min: 0 }
+        pocion_curativa : { type: Number, default: 0, min: 0 },
+        semilla_sagrada : { type: Number, default: 0, min: 0 }
     },
+    logrosObtenidos : { type: [String], default: [] },
     contadorAcciones : {
         alimentar : { type: Number, default: 0 },
         jugar     : { type: Number, default: 0 },

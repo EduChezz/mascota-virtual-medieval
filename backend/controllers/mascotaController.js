@@ -271,18 +271,39 @@ export async function ejecutarTick(req, res) {
             doc.activa = false
         }
 
+        // ── Semillas bonus cada 5 ticks cuando el bosque está sano ──
+        let semillasBonus = 0
+        if (criatura.getDiasVividos() % 5 === 0 && bosque.getSalud() >= 75) {
+            semillasBonus = 1
+            doc.semillas  = Math.min(999, (doc.semillas || 0) + 1)
+        }
+
+        // ── Logro Guardián del Bosque — 20 días consecutivos al 75%+ ──
+        const logrosExtra = []
+        const logrosYa    = criatura.toObject().logrosObtenidos || []
+        if (bosque.getRachaAlta() >= 20 && !logrosYa.includes('guardian_bosque')) {
+            criatura._registrarLogro('guardian_bosque')
+            logrosExtra.push({
+                icono   : '🌳',
+                titulo  : '¡Guardián del Bosque!',
+                mensaje : 'Mantuviste el bosque floreciendo por 20 días seguidos.'
+            })
+        }
+
         await guardarCriatura(doc, criatura, bosque, historial)
 
         // extraer evento del historial reciente
-        const registros     = historial.getRegistros(1)
+        const registros      = historial.getRegistros(1)
         const ultimoRegistro = registros[0]
         const eventoActual   = ultimoRegistro?.datos?.evento || null
 
         return res.json({
-            exito   : true,
-            mensaje : `Día ${criatura.getDiasVividos()} del ciclo`,
-            datos   : construirRespuesta(criatura, bosque, historial, doc),
-            evento  : eventoActual
+            exito         : true,
+            mensaje       : `Día ${criatura.getDiasVividos()} del ciclo`,
+            datos         : construirRespuesta(criatura, bosque, historial, doc),
+            evento        : eventoActual,
+            logros        : logrosExtra,
+            semillasBonus : semillasBonus
         })
 
     } catch (error) {
@@ -347,7 +368,8 @@ export async function comprarItem(req, res) {
             nectar_sagrado  : 25,
             pocion_energia  : 10,
             pocion_vinculo  : 15,
-            pocion_curativa : 20
+            pocion_curativa : 20,
+            semilla_sagrada : 30
         }
 
         const costo = costos[item]
@@ -381,7 +403,8 @@ export async function comprarItem(req, res) {
             nectar_sagrado  : 'Néctar Sagrado',
             pocion_energia  : 'Poción de Energía',
             pocion_vinculo  : 'Poción de Vínculo',
-            pocion_curativa : 'Poción Curativa'
+            pocion_curativa : 'Poción Curativa',
+            semilla_sagrada : 'Semilla Sagrada'
         }
 
         const { criatura, bosque, historial } = reconstruirCriatura(doc)
@@ -418,8 +441,17 @@ export async function usarItem(req, res) {
         const { criatura, bosque, historial } = reconstruirCriatura(doc)
 
         // aplicar efecto del ítem
-        const accion    = AccionFactory.crear('comprar', { item })
-        const resultado = accion.ejecutar(criatura.getEstadisticas())
+        let resultado
+        if (item === 'semilla_sagrada') {
+            bosque.sanar(25)
+            resultado = {
+                mensaje : '🌱 La Semilla Sagrada sana el bosque',
+                efectos : { bosque: +25 }
+            }
+        } else {
+            const accion = AccionFactory.crear('comprar', { item })
+            resultado    = accion.ejecutar(criatura.getEstadisticas())
+        }
 
         // descontar del inventario
         doc.inventario[item] = cantidad - 1

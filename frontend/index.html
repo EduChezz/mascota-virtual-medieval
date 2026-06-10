@@ -244,10 +244,17 @@
         <header class="juego-header">
             <div class="header-bosque">
                 <span class="header-label">🌳 Bosque</span>
-                <div class="barra-contenedor">
-                    <div class="barra barra-bosque" id="barra-bosque"></div>
+                <div class="bosque-barra-wrap">
+                    <div class="barra-contenedor">
+                        <div class="barra barra-bosque" id="barra-bosque"></div>
+                    </div>
+                    <div class="bosque-marcadores" aria-hidden="true">
+                        <span style="left:25%"></span>
+                        <span style="left:50%"></span>
+                        <span style="left:75%"></span>
+                    </div>
                 </div>
-                <span class="header-valor" id="valor-bosque">100</span>
+                <span class="header-valor" id="valor-bosque">50</span>
             </div>
             <div class="header-info">
                 <span id="nombre-criatura" class="criatura-nombre">—</span>
@@ -395,7 +402,7 @@
             </button>
 
             <!-- botón mochila (inventario) -->
-            <button class="btn-accion btn-mochila" id="btn-mochila" title="Mochila" style="display:none">
+            <button class="btn-accion btn-mochila" id="btn-mochila" title="Mochila">
                 <span class="accion-icono">🎒</span>
                 <span class="accion-label">Mochila <span id="mochila-badge" style="background:rgba(127,255,127,0.3);border-radius:10px;padding:0 6px;font-size:0.75rem;font-weight:bold"></span></span>
             </button>
@@ -571,6 +578,14 @@
                     <div class="item-nombre">Poción Curativa</div>
                     <div class="item-efecto">Vitalidad +30, Cura enfermedad</div>
                     <div class="item-costo">🌱 20</div>
+                    <button class="btn-comprar">Comprar</button>
+                </div>
+
+                <div class="tienda-item tienda-item-especial" data-item="semilla_sagrada">
+                    <div class="item-icono">🌱</div>
+                    <div class="item-nombre">Semilla Sagrada</div>
+                    <div class="item-efecto">Bosque +25 salud</div>
+                    <div class="item-costo">🌱 30</div>
                     <button class="btn-comprar">Comprar</button>
                 </div>
 

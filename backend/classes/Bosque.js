@@ -32,10 +32,11 @@ export class Bosque {
         if (Bosque.#instancia) {
             throw new Error('Bosque es un Singleton. Usa Bosque.getInstance()')
         }
-        this.salud         = 100
-        this.descripcion   = 'El bosque florece con vida'
-        this.color         = '#2d6e4e'
-        this.fondo         = 'bosque_100'
+        this.salud         = 50
+        this.descripcion   = 'El bosque aguarda tu cuidado'
+        this.color         = '#4a6e3a'
+        this.fondo         = 'bosque_75'
+        this._rachaAlta    = 0
     }
 
     // ════════════════════════════════════════
@@ -55,7 +56,8 @@ export class Bosque {
                 break
 
             case 'tickDiario':
-                this._degradarNatural()
+                this._degradarNatural(criatura.getEstado().getNombre())
+                this._rachaAlta = this.salud >= 75 ? this._rachaAlta + 1 : 0
                 break
 
             case 'evolucion':
@@ -99,8 +101,10 @@ export class Bosque {
         this._modificarSalud(efecto)
     }
 
-    _degradarNatural() {
-        this._modificarSalud(-3)
+    _degradarNatural(estadoCriatura = 'paz') {
+        const estadosCriticos = ['triste', 'hambriento', 'peligro', 'perdido']
+        const degradacion     = estadosCriticos.includes(estadoCriatura) ? -5 : -3
+        this._modificarSalud(degradacion)
     }
 
     _reaccionarEvolucion(faseNueva) {
@@ -145,10 +149,16 @@ export class Bosque {
     // GETTERS
     // ════════════════════════════════════════
 
-    getSalud()       { return this.salud       }
-    getDescripcion() { return this.descripcion }
-    getColor()       { return this.color       }
-    getFondo()       { return this.fondo       }
+    getSalud()       { return this.salud        }
+    getDescripcion() { return this.descripcion  }
+    getColor()       { return this.color        }
+    getFondo()       { return this.fondo        }
+    getRachaAlta()   { return this._rachaAlta   }
+
+    sanar(cantidad) {
+        this._modificarSalud(cantidad)
+        this._actualizarVisual()
+    }
 
     // ════════════════════════════════════════
     // SERIALIZACIÓN
@@ -159,15 +169,17 @@ export class Bosque {
             salud       : this.salud,
             descripcion : this.descripcion,
             color       : this.color,
-            fondo       : this.fondo
+            fondo       : this.fondo,
+            rachaAlta   : this._rachaAlta
         }
     }
 
     cargarDesdeObject(obj) {
-        this.salud       = obj.salud       ?? 100
-        this.descripcion = obj.descripcion ?? 'El bosque florece con vida'
-        this.color       = obj.color       ?? '#2d6e4e'
-        this.fondo       = obj.fondo       ?? 'bosque_100'
+        this.salud        = obj.salud       ?? 50
+        this.descripcion  = obj.descripcion ?? 'El bosque aguarda tu cuidado'
+        this.color        = obj.color       ?? '#4a6e3a'
+        this.fondo        = obj.fondo       ?? 'bosque_75'
+        this._rachaAlta   = obj.rachaAlta   ?? 0
     }
 
     // reset del singleton (útil para tests)

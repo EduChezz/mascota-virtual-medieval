@@ -321,13 +321,14 @@ const CooldownManager = {
 // ════════════════════════════════════════════
 
 const estado = {
-    pantalla           : 'intro',
-    slideActual        : 0,
-    totalSlides        : 5,
-    datosCriatura      : null,
-    tickInterval       : null,
-    particulasInterval : null,
-    estadoAnterior     : null
+    pantalla              : 'intro',
+    slideActual           : 0,
+    totalSlides           : 5,
+    datosCriatura         : null,
+    tickInterval          : null,
+    particulasInterval    : null,
+    estadoAnterior        : null,
+    alertaBosqueCritico   : false
 }
 
 // ════════════════════════════════════════════
@@ -406,6 +407,12 @@ function activarModoDemo() {
             if (data.exito) {
                 actualizarJuego(data.datos)
                 if (data.evento) setTimeout(() => mostrarEventoEspecial(data.evento), 500)
+                if (data.logros?.length) {
+                    data.logros.forEach((logro, i) => setTimeout(() => mostrarLogro(logro), 500 + i * 2000))
+                }
+                if (data.semillasBonus) {
+                    setTimeout(() => mostrarNotificacion('🌳 +1 semilla — ¡El bosque prospera!'), 700)
+                }
             }
         } catch(e) {}
     }, 3000)
@@ -839,6 +846,20 @@ function actualizarJuego(datos) {
     actualizarBadgeTendencia(tendencia, diasVividos, fase)
     actualizarUrgencias(urgencias, nombre)
 
+    // ── Alerta bosque crítico ────────────────
+    const pantallaJuego = document.getElementById('pantalla-juego')
+    if (saludBosque < 30) {
+        pantallaJuego?.classList.add('bosque-critico')
+        if (!estado.alertaBosqueCritico) {
+            estado.alertaBosqueCritico = true
+            mostrarNotificacion('🌑 ¡El bosque agoniza! Los árboles se marchitan... Sylvae necesita tu cuidado.', true)
+            GestorAudio.reproducirCriatura(GestorAudio.getSonidoCriatura('peligro'))
+        }
+    } else {
+        pantallaJuego?.classList.remove('bosque-critico')
+        if (saludBosque >= 30) estado.alertaBosqueCritico = false
+    }
+
     const musicaCorrecta = GestorAudio.getMusicaBosque(saludBosque)
     if (GestorAudio.canales.musica && !GestorAudio.canales.musica.src?.includes(musicaCorrecta.split('/').pop())) {
         GestorAudio.reproducirMusica(musicaCorrecta)
@@ -1085,6 +1106,12 @@ function iniciarTickAutomatico() {
             if (data.exito) {
                 actualizarJuego(data.datos)
                 if (data.evento) setTimeout(() => mostrarEventoEspecial(data.evento), 1000)
+                if (data.logros?.length) {
+                    data.logros.forEach((logro, i) => setTimeout(() => mostrarLogro(logro), 800 + i * 2000))
+                }
+                if (data.semillasBonus) {
+                    setTimeout(() => mostrarNotificacion('🌳 +1 semilla — ¡El bosque prospera!'), 1200)
+                }
             }
         } catch (error) { console.error('Error en tick:', error) }
     }, 30000)
@@ -1413,10 +1440,11 @@ const ITEMS_INFO = {
     hierba_fresca   : { nombre: 'Hierba Fresca',      icono: '🍃', efecto: 'Hambre -20' },
     fruta_encantada : { nombre: 'Fruta Encantada',    icono: '🍎', efecto: 'Hambre -40 · Espíritu +10' },
     miel_bosque     : { nombre: 'Miel del Bosque',    icono: '🍯', efecto: 'Hambre -60 · Vitalidad +20' },
-    nectar_sagrado  : { nombre: 'Néctar Sagrado',     icono: '🌺', efecto: 'Cura hambre · Vitalidad+10 · Espíritu+10 · Vínculo+10' },
+    nectar_sagrado  : { nombre: 'Néctar Sagrado',     icono: '🌺', efecto: 'Cura hambre · Todo +10' },
     pocion_energia  : { nombre: 'Poción de Energía',  icono: '💊', efecto: 'Energía +50' },
     pocion_vinculo  : { nombre: 'Poción de Vínculo',  icono: '💜', efecto: 'Vínculo +30' },
-    pocion_curativa : { nombre: 'Poción Curativa',    icono: '🔮', efecto: 'Vitalidad +30 · Espíritu +20' }
+    pocion_curativa : { nombre: 'Poción Curativa',    icono: '🔮', efecto: 'Vitalidad +30 · Espíritu +20' },
+    semilla_sagrada : { nombre: 'Semilla Sagrada',    icono: '🌱', efecto: 'Bosque +25 salud' }
 }
 
 function actualizarMochila(inventario) {
@@ -1424,9 +1452,8 @@ function actualizarMochila(inventario) {
     const btn   = document.getElementById('btn-mochila')
     const badge = document.getElementById('mochila-badge')
     const total = Object.values(inventario).reduce((s, q) => s + q, 0)
-    if (btn)   btn.style.display    = total > 0 ? 'flex' : 'none'
-    if (badge) badge.textContent    = total > 0 ? total  : ''
-    // Si el panel está abierto, refrescar su contenido
+    if (badge) badge.textContent = total > 0 ? total : ''
+    // El botón siempre está visible
     const panel = document.getElementById('panel-mochila')
     if (panel && !panel.classList.contains('oculto')) renderMochila(inventario)
 }
