@@ -82,6 +82,7 @@ export class AccionDormir extends AccionBase {
     }
 
     getEfectos() { return { energia: +30, vitalidad: +5 } }
+}
 
 // ── 4. BAÑAR ──────────────────────────────────
 export class AccionBañar extends AccionBase {
