@@ -396,8 +396,9 @@
             <!-- botón mochila (inventario) -->
             <button class="btn-accion btn-mochila" id="btn-mochila" title="Mochila" style="display:none">
                 <span class="accion-icono">🎒</span>
-                <span class="accion-label">Mochila <span id="mochila-badge" style="background:rgba(127,255,127,0.3);border-radius:10px;padding:0 6px;font-size:0.75rem"></span></span>
+                <span class="accion-label">Mochila <span id="mochila-badge" style="background:rgba(127,255,127,0.3);border-radius:10px;padding:0 6px;font-size:0.75rem;font-weight:bold"></span></span>
             </button>
+
 
             <!-- botón modo demo -->
             <button class="btn-modo" id="btn-modo" title="Cambiar modo">
@@ -572,6 +573,22 @@
                     <button class="btn-comprar">Comprar</button>
                 </div>
 
+            </div>
+        </div>
+    </div>
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANEL MOCHILA / INVENTARIO            -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="panel-mochila" class="panel-modal oculto">
+        <div class="modal-contenido">
+            <div class="modal-header">
+                <h3>🎒 Mochila de Sylvae</h3>
+                <button class="modal-cerrar" id="btn-cerrar-mochila">✕</button>
+            </div>
+            <p style="font-size:0.8rem;color:var(--color-texto-suave);text-align:center;margin:0 0 1rem">
+                Usa los ítems para cuidar a tu criatura
+            </p>
+            <div id="mochila-contenido" class="mochila-grid">
             </div>
         </div>
     </div>

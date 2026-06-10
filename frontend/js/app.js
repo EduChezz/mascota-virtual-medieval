@@ -3,7 +3,7 @@
 // Version completa con semillas + minijuegos
 // ============================================
 
-const API = 'https://mascota-virtual-medieval.onrender.com/api/mascota'
+const API = '/api/mascota'
 
 // ════════════════════════════════════════════
 // CONFIGURACIÓN DE MODOS
@@ -795,6 +795,8 @@ function actualizarJuego(datos) {
 
     // semillas
     if (datos.semillas !== undefined) actualizarSemillas(datos.semillas)
+    // inventario / mochila
+    if (datos.inventario !== undefined) actualizarMochila(datos.inventario)
 
     actualizarImagenCriatura(imagenActual, fase, tipoEvolucion)
     if (est?.mensaje) dom.estadoMensaje.textContent = est.mensaje
@@ -820,12 +822,13 @@ function actualizarJuego(datos) {
 }
 
 function obtenerLabelFase(fase, tipo) {
+    const tipoLabel = tipo ? ` · ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}` : ''
     const labels = {
         huevo          : '🥚 Huevo Espiritual',
         base           : '🐾 Sylvae · Fase Joven',
-        adulta         : '🌿 Sylvae · Fase Adulta',
-        retorno_feliz  : '✨ Retorno al Bosque — Feliz',
-        retorno_triste : '💔 Retorno al Bosque — Triste',
+        adulta         : `🌿 Sylvae · Fase Adulta${tipoLabel}`,
+        retorno_feliz  : `✨ Retorno al Bosque — Feliz${tipoLabel}`,
+        retorno_triste : `💔 Retorno al Bosque — Triste${tipoLabel}`,
         perdido        : '💔 Perdido'
     }
     return labels[fase] || fase
@@ -950,8 +953,11 @@ function actualizarBotonesAccion(accionesDisponibles) {
 function actualizarBadgeTendencia(tendencia, diasVividos, fase) {
     const badge = document.getElementById('badge-tendencia')
     if (!badge) return
-    // Con el nuevo sistema no hay múltiples evoluciones — ocultamos el badge
-    badge.classList.add('oculto')
+    if (!tendencia || fase === 'huevo') { badge.classList.add('oculto'); return }
+    badge.classList.remove('oculto')
+    ;['natura','umbra','ignis','aqua','aether','umbris'].forEach(c => badge.classList.remove(c))
+    if (tendencia.tipo) badge.classList.add(tendencia.tipo)
+    badge.textContent = `${tendencia.icono} ${tendencia.nombre}`
 }
 
 let urgenciaOverlay = null, urgenciaTimeout = null
@@ -996,7 +1002,7 @@ async function ejecutarAccion(nombreAccion, btn) {
     try {
         const res  = await fetch(`${API}/accion`, {
             method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ nombreAccion })
+            body: JSON.stringify({ nombreAccion, demo: modoActual === 'demo' })
         })
         const data = await res.json()
         if (data.exito) {
@@ -1009,12 +1015,14 @@ async function ejecutarAccion(nombreAccion, btn) {
             estado.datosCriatura = data.datos
             actualizarJuego(data.datos)
             mostrarNotificacion(data.mensaje)
+            // mostrar logros desbloqueados
+            if (data.logros?.length) {
+                data.logros.forEach((logro, i) => setTimeout(() => mostrarLogro(logro), 500 + i * 2000))
+            }
             // mostrar advertencias por exceso
-            if (data.advertencias && data.advertencias.length > 0) {
+            if (data.advertencias?.length) {
                 data.advertencias.forEach((adv, i) => {
-                    setTimeout(() => {
-                        mostrarNotificacion(`${adv.icono} ${adv.mensaje}`, true)
-                    }, i * 1500)
+                    setTimeout(() => mostrarNotificacion(`${adv.icono} ${adv.mensaje}`, true), i * 1500)
                 })
             }
             CooldownManager.iniciar(nombreAccion, cooldownSegundos)
@@ -1249,7 +1257,11 @@ dom.btnReiniciar.addEventListener('click', async () => {
 })
 
 document.getElementById('btn-ver-historial')?.addEventListener('click', () => {
-    mostrarNotificacion('📊 Historial próximamente disponible')
+    const panel = document.getElementById('panel-historial')
+    if (panel) {
+        panel.classList.remove('oculto')
+        cargarHistorial()
+    }
 })
 
 // ════════════════════════════════════════════
@@ -1341,7 +1353,12 @@ async function comprarItemTienda(item, btn) {
         const data = await res.json()
         if (data.exito) {
             actualizarSemillas(data.semillas)
-            actualizarJuego(data.datos)
+            if (data.datos) {
+                estado.datosCriatura = data.datos
+                actualizarJuego(data.datos)
+            } else if (data.inventario) {
+                actualizarMochila(data.inventario)
+            }
             mostrarNotificacion(data.mensaje)
             document.getElementById('panel-tienda').classList.add('oculto')
         } else {
@@ -1354,6 +1371,103 @@ async function comprarItemTienda(item, btn) {
         btn.textContent = 'Comprar'
     }
 }
+
+// ════════════════════════════════════════════
+// MOCHILA / INVENTARIO
+// ════════════════════════════════════════════
+
+const ITEMS_INFO = {
+    hierba_fresca   : { nombre: 'Hierba Fresca',      icono: '🍃', efecto: 'Hambre -20' },
+    fruta_encantada : { nombre: 'Fruta Encantada',    icono: '🍎', efecto: 'Hambre -40 · Espíritu +10' },
+    miel_bosque     : { nombre: 'Miel del Bosque',    icono: '🍯', efecto: 'Hambre -60 · Vitalidad +20' },
+    nectar_sagrado  : { nombre: 'Néctar Sagrado',     icono: '🌺', efecto: 'Cura hambre · Vitalidad+10 · Espíritu+10 · Vínculo+10' },
+    pocion_energia  : { nombre: 'Poción de Energía',  icono: '💊', efecto: 'Energía +50' },
+    pocion_vinculo  : { nombre: 'Poción de Vínculo',  icono: '💜', efecto: 'Vínculo +30' },
+    pocion_curativa : { nombre: 'Poción Curativa',    icono: '🔮', efecto: 'Vitalidad +30 · Espíritu +20' }
+}
+
+function actualizarMochila(inventario) {
+    if (!inventario) return
+    const btn   = document.getElementById('btn-mochila')
+    const badge = document.getElementById('mochila-badge')
+    const total = Object.values(inventario).reduce((s, q) => s + q, 0)
+    if (btn)   btn.style.display    = total > 0 ? 'flex' : 'none'
+    if (badge) badge.textContent    = total > 0 ? total  : ''
+    // Si el panel está abierto, refrescar su contenido
+    const panel = document.getElementById('panel-mochila')
+    if (panel && !panel.classList.contains('oculto')) renderMochila(inventario)
+}
+
+function renderMochila(inventario) {
+    const contenido = document.getElementById('mochila-contenido')
+    if (!contenido) return
+    const items = Object.entries(inventario || {}).filter(([, qty]) => qty > 0)
+    if (items.length === 0) {
+        contenido.innerHTML = '<p style="color:var(--color-texto-suave);text-align:center;padding:2rem;font-size:0.85rem">Tu mochila está vacía.<br>Visita la tienda para comprar ítems.</p>'
+        return
+    }
+    contenido.innerHTML = ''
+    items.forEach(([id, qty]) => {
+        const info = ITEMS_INFO[id] || { nombre: id, icono: '📦', efecto: '' }
+        const el   = document.createElement('div')
+        el.className = 'mochila-item'
+        el.dataset.item = id
+        el.innerHTML = `
+            <div class="item-icono">${info.icono}</div>
+            <div class="item-info">
+                <div class="item-nombre">${info.nombre}</div>
+                <div class="item-efecto">${info.efecto}</div>
+            </div>
+            <div class="item-cantidad">x${qty}</div>
+            <button class="btn-usar-item" data-item="${id}">Usar</button>`
+        contenido.appendChild(el)
+    })
+}
+
+document.getElementById('btn-mochila')?.addEventListener('click', () => {
+    const panel = document.getElementById('panel-mochila')
+    if (!panel) return
+    panel.classList.remove('oculto')
+    renderMochila(estado.datosCriatura?.inventario || {})
+})
+
+document.getElementById('btn-cerrar-mochila')?.addEventListener('click', () => {
+    document.getElementById('panel-mochila')?.classList.add('oculto')
+})
+
+document.addEventListener('click', async (e) => {
+    const btnUsar = e.target.closest('.btn-usar-item')
+    if (!btnUsar) return
+    const item = btnUsar.dataset.item
+    if (!item) return
+    btnUsar.disabled    = true
+    btnUsar.textContent = '...'
+    try {
+        const res  = await fetch(`${API}/usar-item`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ item })
+        })
+        const data = await res.json()
+        if (data.exito) {
+            if (data.datos) {
+                estado.datosCriatura = data.datos
+                actualizarJuego(data.datos)
+            } else if (data.inventario) {
+                actualizarMochila(data.inventario)
+            }
+            mostrarNotificacion(data.mensaje)
+            GestorAudio.reproducirEfecto('/assets/sounds/acciones/alimentar.mp3', 1500)
+        } else {
+            mostrarNotificacion(data.mensaje, true)
+            btnUsar.disabled    = false
+            btnUsar.textContent = 'Usar'
+        }
+    } catch (error) {
+        mostrarNotificacion('Error al usar el ítem', true)
+        btnUsar.disabled    = false
+        btnUsar.textContent = 'Usar'
+    }
+})
 
 // ════════════════════════════════════════════
 // MINIJUEGOS CON ALDEANOS
@@ -1569,10 +1683,14 @@ document.addEventListener('click', (e) => {
         return
     }
 
-    // cerrar modal al hacer click fuera
-    if (e.target.classList.contains('panel-modal')) {
+    // cerrar modal al hacer click en el overlay (fondo oscuro, no en el contenido)
+    if (e.target.matches('.panel-modal')) {
         e.target.classList.add('oculto')
         Minijuego.limpiar()
+        return
+    }
+    if (e.target.matches('#panel-mochila')) {
+        e.target.classList.add('oculto')
         return
     }
 })
@@ -1654,9 +1772,9 @@ async function inicializar() {
 
                 // Info de la criatura en el botón (nombre + días)
                 if (infoEl && data.datos.nombre) {
-                    const dias = data.datos.diasVividos ?? 0
+                    const dias = (data.datos.diasVividos ?? 0) + 1
                     const tipo = data.datos.tipoEvolucion
-                        ? ` · ${data.datos.tipoEvolucion}`
+                        ? ` · ${data.datos.tipoEvolucion.charAt(0).toUpperCase() + data.datos.tipoEvolucion.slice(1)}`
                         : ''
                     infoEl.textContent = `${data.datos.nombre} · Día ${dias}${tipo}`
                 }

@@ -78,7 +78,7 @@ function construirRespuesta(criatura, bosque, historial, doc) {
         diasVividos   : criatura.getDiasVividos(),
         diasMaximos   : criatura.getDiasMaximos(),
         imagenActual  : criatura.getImagenActual(),
-        tendencia     : datos.tendencia,
+        tendencia     : criatura.getEstadisticas().getTendenciaEvolucion(),
         urgencias     : datos.urgencias,
         resumen       : datos.resumen,
         semillas      : doc.semillas || 0,
@@ -178,7 +178,7 @@ export async function obtenerEstado(req, res) {
 // ── POST /api/mascota/accion ──────────────────
 export async function ejecutarAccion(req, res) {
     try {
-        const { nombreAccion } = req.body
+        const { nombreAccion, demo } = req.body
 
         if (!nombreAccion) {
             return res.status(400).json({
@@ -205,8 +205,9 @@ export async function ejecutarAccion(req, res) {
             hablar    : 30
         }
 
+        // En modo demo se omite la verificación de cooldown
         const cooldown = cooldowns[nombreAccion]
-        if (cooldown && !doc.puedeEjecutar(nombreAccion, cooldown)) {
+        if (cooldown && !demo && !doc.puedeEjecutar(nombreAccion, cooldown)) {
             return res.status(429).json({
                 exito   : false,
                 mensaje : `La criatura necesita descansar antes de ${nombreAccion} de nuevo.`
@@ -224,16 +225,22 @@ export async function ejecutarAccion(req, res) {
             })
         }
 
+        // Semillas que otorga la acción (ej: meditar da 3)
+        if (resultado.resultado?.semillas) {
+            doc.semillas = Math.min(999, (doc.semillas || 0) + resultado.resultado.semillas)
+        }
+
         doc.ultimasAcciones[nombreAccion] = new Date()
         doc.markModified('ultimasAcciones')
 
         await guardarCriatura(doc, criatura, bosque, historial)
 
         return res.json({
-            exito   : true,
-            mensaje : resultado.resultado.mensaje,
-            logros  : resultado.logros || [],        // ← agregar
-            datos   : {
+            exito        : true,
+            mensaje      : resultado.resultado.mensaje,
+            logros       : resultado.logros       || [],
+            advertencias : resultado.advertencias || [],
+            datos        : {
                 ...construirRespuesta(criatura, bosque, historial, doc),
                 efectos : resultado.resultado.efectos
             }
@@ -377,11 +384,14 @@ export async function comprarItem(req, res) {
             pocion_curativa : 'Poción Curativa'
         }
 
+        const { criatura, bosque, historial } = reconstruirCriatura(doc)
+
         return res.json({
             exito      : true,
             mensaje    : `🎒 ${nombresItems[item]} guardado en tu mochila`,
             semillas   : doc.semillas,
-            inventario : doc.inventario
+            inventario : doc.inventario,
+            datos      : construirRespuesta(criatura, bosque, historial, doc)
         })
 
     } catch (error) {

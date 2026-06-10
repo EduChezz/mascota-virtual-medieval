@@ -85,10 +85,12 @@ export class Criatura {
         }
 
         if (this.diasVividos === 50 && this.fase === 'base') {
+            const tendencia = this.estadisticas.getTendenciaEvolucion()
+            this.tipoEvolucion = tendencia.tipo
             this.fase = 'adulta'
             this._notificarObservadores('evolucion', {
-                faseAnterior: 'base', faseNueva: 'adulta', tipo: null,
-                mensaje: '✨ ¡Sylvae ha crecido! Ha alcanzado su fase adulta.'
+                faseAnterior: 'base', faseNueva: 'adulta', tipo: tendencia.tipo,
+                mensaje: `✨ ¡Sylvae ha crecido! Ha alcanzado su fase adulta como Sylvae ${tendencia.nombre}.`
             })
             return
         }
@@ -98,7 +100,7 @@ export class Criatura {
             const retornoFeliz = stats.vitalidad > 50 && stats.vinculo > 50 && stats.espiritu > 40
             this.fase          = retornoFeliz ? 'retorno_feliz' : 'retorno_triste'
             this._notificarObservadores('evolucion', {
-                faseAnterior: 'adulta', faseNueva: this.fase, tipo: null,
+                faseAnterior: 'adulta', faseNueva: this.fase, tipo: this.tipoEvolucion,
                 mensaje: retornoFeliz
                     ? '✨ Sylvae completa el ciclo con amor. El bosque florece.'
                     : '💔 Sylvae completa el ciclo con tristeza. El bosque llora.'
@@ -246,7 +248,7 @@ export class Criatura {
             perdido        : '💔 El bosque se ha oscurecido... pero cada final es un nuevo comienzo. El espíritu espera a quien esté listo para cumplir el juramento.'
         }
         return {
-            nombre: this.nombre, fase: this.fase, tipo: null,
+            nombre: this.nombre, fase: this.fase, tipo: this.tipoEvolucion,
             diasVividos: this.diasVividos, diasMaximos: this.diasMaximos,
             estadisticas: stats, logroMaximo,
             mensaje : mensajes[estado] || 'El ciclo continúa. El bosque recuerda cada momento.',

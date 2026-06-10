@@ -1195,6 +1195,44 @@ body {
 }
 .btn-comprar:hover { transform: scale(1.05); box-shadow: var(--glow-verde); }
 
+/* ── Panel Mochila ── */
+.mochila-grid {
+    display        : flex;
+    flex-direction : column;
+    gap            : 0.6rem;
+    max-height     : 55vh;
+    overflow-y     : auto;
+}
+.mochila-item {
+    display        : flex;
+    align-items    : center;
+    gap            : 0.7rem;
+    padding        : 0.6rem 0.8rem;
+    background     : rgba(255,255,255,0.04);
+    border         : 1px solid var(--color-borde);
+    border-radius  : 10px;
+    transition     : var(--transicion);
+}
+.mochila-item:hover { border-color: var(--color-acento); }
+.mochila-item .item-icono  { font-size: 1.6rem; flex-shrink: 0; }
+.mochila-item .item-info   { flex: 1; min-width: 0; }
+.mochila-item .item-nombre { font-size: 0.8rem; font-weight: bold; color: var(--color-texto); }
+.mochila-item .item-efecto { font-size: 0.65rem; color: var(--color-texto-suave); }
+.mochila-item .item-cantidad { font-size: 0.85rem; color: #7fff7f; font-weight: bold; flex-shrink: 0; }
+.btn-usar-item {
+    padding       : 0.3rem 0.75rem;
+    background    : linear-gradient(135deg, #2a1a4e, #4a2a8e);
+    border        : 1px solid rgba(147,112,219,0.6);
+    border-radius : 10px;
+    color         : rgba(200,170,255,1);
+    font-size     : 0.7rem;
+    cursor        : pointer;
+    flex-shrink   : 0;
+    transition    : var(--transicion);
+}
+.btn-usar-item:hover { transform: scale(1.05); box-shadow: 0 0 10px rgba(147,112,219,0.5); }
+.btn-usar-item:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .minijuego-subtitulo { color: var(--color-texto-suave); font-size: 0.85rem; text-align: center; margin-bottom: 1rem; font-style: italic; }
 .minijuegos-grid {
     display               : grid;
