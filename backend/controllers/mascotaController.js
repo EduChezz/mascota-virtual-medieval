@@ -81,7 +81,8 @@ function construirRespuesta(criatura, bosque, historial, doc) {
         tendencia     : datos.tendencia,
         urgencias     : datos.urgencias,
         resumen       : datos.resumen,
-        semillas      : doc.semillas || 0 
+        semillas      : doc.semillas || 0,
+        inventario    : doc.inventario || {}
     }
 }
 
@@ -344,21 +345,14 @@ export async function comprarItem(req, res) {
 
         const costo = costos[item]
         if (!costo) {
-            return res.status(400).json({
-                exito   : false,
-                mensaje : 'Item no encontrado en la tienda'
-            })
+            return res.status(400).json({ exito: false, mensaje: 'Item no encontrado en la tienda' })
         }
 
         const doc = await MascotaModel.findOne({ activa: true })
         if (!doc) {
-            return res.status(404).json({
-                exito   : false,
-                mensaje : 'No hay criatura activa'
-            })
+            return res.status(404).json({ exito: false, mensaje: 'No hay criatura activa' })
         }
 
-        // verificar semillas suficientes
         if ((doc.semillas || 0) < costo) {
             return res.status(400).json({
                 exito   : false,
@@ -366,27 +360,73 @@ export async function comprarItem(req, res) {
             })
         }
 
-        const { criatura, bosque, historial } = reconstruirCriatura(doc)
-
-        // descontar semillas
+        // ── Descontar semillas y guardar en inventario ──
         doc.semillas = (doc.semillas || 0) - costo
+        if (!doc.inventario) doc.inventario = {}
+        doc.inventario[item] = (doc.inventario[item] || 0) + 1
+        doc.markModified('inventario')
+        await doc.save()
 
-        // aplicar efectos del item
-        const accion    = AccionFactory.crear('comprar', { item })
-        const resultado = accion.ejecutar(criatura.getEstadisticas())
-
-        await guardarCriatura(doc, criatura, bosque, historial)
+        const nombresItems = {
+            hierba_fresca   : 'Hierba Fresca',
+            fruta_encantada : 'Fruta Encantada',
+            miel_bosque     : 'Miel del Bosque',
+            nectar_sagrado  : 'Néctar Sagrado',
+            pocion_energia  : 'Poción de Energía',
+            pocion_vinculo  : 'Poción de Vínculo',
+            pocion_curativa : 'Poción Curativa'
+        }
 
         return res.json({
-            exito    : true,
-            mensaje  : resultado.mensaje,
-            semillas : doc.semillas,
-            efectos  : resultado.efectos,
-            datos    : construirRespuesta(criatura, bosque, historial, doc)
+            exito      : true,
+            mensaje    : `🎒 ${nombresItems[item]} guardado en tu mochila`,
+            semillas   : doc.semillas,
+            inventario : doc.inventario
         })
 
     } catch (error) {
         console.error('Error al comprar:', error)
+        res.status(500).json({ exito: false, mensaje: error.message })
+    }
+}
+
+// ── POST /api/mascota/usar-item ───────────────
+export async function usarItem(req, res) {
+    try {
+        const { item } = req.body
+
+        const doc = await MascotaModel.findOne({ activa: true })
+        if (!doc) {
+            return res.status(404).json({ exito: false, mensaje: 'No hay criatura activa' })
+        }
+
+        const cantidad = doc.inventario?.[item] || 0
+        if (cantidad <= 0) {
+            return res.status(400).json({ exito: false, mensaje: 'No tienes ese ítem en tu mochila' })
+        }
+
+        const { criatura, bosque, historial } = reconstruirCriatura(doc)
+
+        // aplicar efecto del ítem
+        const accion    = AccionFactory.crear('comprar', { item })
+        const resultado = accion.ejecutar(criatura.getEstadisticas())
+
+        // descontar del inventario
+        doc.inventario[item] = cantidad - 1
+        doc.markModified('inventario')
+
+        await guardarCriatura(doc, criatura, bosque, historial)
+
+        return res.json({
+            exito      : true,
+            mensaje    : resultado.mensaje,
+            efectos    : resultado.efectos,
+            inventario : doc.inventario,
+            datos      : construirRespuesta(criatura, bosque, historial, doc)
+        })
+
+    } catch (error) {
+        console.error('Error al usar ítem:', error)
         res.status(500).json({ exito: false, mensaje: error.message })
     }
 }

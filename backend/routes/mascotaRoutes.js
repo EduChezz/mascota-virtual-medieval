@@ -10,7 +10,8 @@ import {
     ejecutarTick,
     reiniciarJuego,
     completarMinijuego,
-    comprarItem
+    comprarItem,
+    usarItem
 } from '../controllers/mascotaController.js'
 
 const router = Router()
@@ -22,5 +23,6 @@ router.post  ('/tick',       ejecutarTick)
 router.delete('/reiniciar',  reiniciarJuego)
 router.post  ('/minijuego',  completarMinijuego)
 router.post  ('/comprar',    comprarItem)
+router.post  ('/usar-item',  usarItem)
 
 export default router
