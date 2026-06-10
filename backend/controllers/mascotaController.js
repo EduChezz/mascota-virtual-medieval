@@ -205,12 +205,21 @@ export async function ejecutarAccion(req, res) {
             hablar    : 30
         }
 
+        const mensajesCooldown = {
+            alimentar : 'Sylvae acaba de comer, necesita tiempo para digerir antes de volver a alimentarse.',
+            jugar     : 'Sylvae está cansada de tanto juego, necesita un momento de calma.',
+            dormir    : 'Sylvae ya descansó recientemente y sigue con energía del último sueño.',
+            bañar     : 'Sylvae aún huele a flores del último baño, no necesita otro todavía.',
+            meditar   : 'Sylvae aún está absorbiendo la paz de su última meditación.',
+            hablar    : 'Sylvae necesita un momento de silencio antes de conversar de nuevo.'
+        }
+
         // En modo demo se omite la verificación de cooldown
         const cooldown = cooldowns[nombreAccion]
         if (cooldown && !demo && !doc.puedeEjecutar(nombreAccion, cooldown)) {
             return res.status(429).json({
                 exito   : false,
-                mensaje : `La criatura necesita descansar antes de ${nombreAccion} de nuevo.`
+                mensaje : mensajesCooldown[nombreAccion] || `${nombreAccion} no está disponible todavía.`
             })
         }
 
