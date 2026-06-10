@@ -998,6 +998,7 @@ function actualizarAura(estadoNombre, fase) {
 function actualizarBotonesAccion(accionesDisponibles) {
     dom.botonesAccion.forEach(btn => {
         const accion = btn.dataset.accion
+        if (!accion) return  // botones sin acción de juego (mochila, etc.) nunca se deshabilitan aquí
         if (!accionesDisponibles.includes(accion) && !btn.classList.contains('en-cooldown')) {
             btn.disabled = true
         }
@@ -1453,7 +1454,7 @@ function actualizarMochila(inventario) {
     const badge = document.getElementById('mochila-badge')
     const total = Object.values(inventario).reduce((s, q) => s + q, 0)
     if (badge) badge.textContent = total > 0 ? total : ''
-    // El botón siempre está visible
+    if (btn)   btn.disabled = false  // nunca debe quedar bloqueada
     const panel = document.getElementById('panel-mochila')
     if (panel && !panel.classList.contains('oculto')) renderMochila(inventario)
 }
