@@ -75,14 +75,17 @@ export class Bosque {
 
     _reaccionarAlEstado(estadoNuevo, criatura) {
         const efectos = {
-            'alegre'      :  +5,
-            'paz'         :   0,
-            'somnoliento' :  -2,
-            'hambriento'  :  -5,
-            'triste'      :  -8,
-            'peligro'     : -15,
-            'retorno'     : +10,
-            'perdido'     : -30
+            'base_feliz'     :  +5,
+            'adulta_feliz'   :  +5,
+            'base_paz'       :   0,
+            'adulta_paz'     :   0,
+            'base_triste'    :  -5,
+            'adulta_triste'  :  -5,
+            'base_peligro'   : -10,
+            'adulta_peligro' : -10,
+            'retorno_feliz'  : +10,
+            'retorno_triste' :  -5,
+            'perdido'        : -20
         }
         const efecto = efectos[estadoNuevo] ?? 0
         this._modificarSalud(efecto)
@@ -101,10 +104,24 @@ export class Bosque {
         this._modificarSalud(efecto)
     }
 
-    _degradarNatural(estadoCriatura = 'paz') {
-        const estadosCriticos = ['triste', 'hambriento', 'peligro', 'perdido']
-        const degradacion     = estadosCriticos.includes(estadoCriatura) ? -5 : -3
-        this._modificarSalud(degradacion)
+    _degradarNatural(estadoCriatura = 'base_paz') {
+        // Criatura feliz → bosque se recupera
+        // Criatura en paz → desgaste leve
+        // Criatura triste/peligro → bosque sufre
+        const cambios = {
+            'base_feliz'     :  +1,
+            'adulta_feliz'   :  +1,
+            'base_paz'       :  -1,
+            'adulta_paz'     :  -1,
+            'base_triste'    :  -3,
+            'adulta_triste'  :  -3,
+            'base_peligro'   :  -5,
+            'adulta_peligro' :  -5,
+            'retorno_feliz'  :  +2,
+            'retorno_triste' :  -3,
+            'perdido'        : -10
+        }
+        this._modificarSalud(cambios[estadoCriatura] ?? -1)
     }
 
     _reaccionarEvolucion(faseNueva) {
