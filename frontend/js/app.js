@@ -1275,8 +1275,6 @@ dom.botonesAccion.forEach(btn => {
 async function ejecutarAccion(nombreAccion, btn) {
     btn.disabled = true
     const cooldownSegundos = MODOS[modoActual].cooldowns[nombreAccion] || 60
-    GestorAudio.reproducirEfecto(`/assets/sounds/acciones/${nombreAccion}.mp3`, 8000)
-    _reaccionSylvae(nombreAccion)
     try {
         const res  = await fetch(`${API}/accion`, {
             method: 'POST', headers: {'Content-Type':'application/json'},
@@ -1284,6 +1282,8 @@ async function ejecutarAccion(nombreAccion, btn) {
         })
         const data = await res.json()
         if (data.exito) {
+            GestorAudio.reproducirEfecto(`/assets/sounds/acciones/${nombreAccion}.mp3`, 8000)
+            _reaccionSylvae(nombreAccion)
             const faseAnterior = estado.datosCriatura?.fase
             const faseNueva    = data.datos?.fase
             if (faseAnterior !== faseNueva) {
